@@ -1,0 +1,856 @@
+version: '3'
+
+# vars:
+#   ROOT_PATH: '{{default "./" .ROOT_PATH}}'
+#   local_bin_path: '{{default "./.local/bin" .PROJECT_BIN_PATH}}'
+#   CONFIG_PATH: '{{default "{{.ROOT_PATH}}/config" .CONFIG_PATH}}'
+
+tasks:
+  show:
+    desc: Show install variables
+    silent: true
+    cmds:
+    - |
+      echo "PROJECT_BIN_PATH: {{.PROJECT_BIN_PATH}}"
+      echo "local_bin_path: {{.local_bin_path}}"
+
+  vendir:
+    desc: install vendir application locally
+    cmds: 
+      - |
+        mkdir -p {{.local_bin_path}}
+        curl -L https://carvel.dev/install.sh | K14SIO_INSTALL_BIN_DIR={{.local_bin_path}} bash
+    status:
+      - type vendir &> /dev/null
+
+
+  chezmoi:
+    desc: install chezmoi dotfile manager
+    cmds:
+      - |
+        cd ~
+        BINDIR=${HOME}/.local/bin
+        mkdir -p "${BINDIR}"
+        curl -sfL https://git.io/chezmoi > /tmp/chezmoi.sh && chmod +x /tmp/chezmoi.sh
+        /tmp/chezmoi.sh -b "${BINDIR}"
+
+  brewfile:
+    desc: install Brewfile
+    deps:
+      - :brew
+    cmds:
+      - |
+        ./scripts/log.sh info 'Installing software bundle defined in `.config/Brewfile`'
+        brew tap Homebrew/bundle
+        cd .config
+        brew bundle
+        ./scripts/log.sh success 'Successfully installed common dependencies defined in `.config/Brewfile`'
+        ./scripts/log.sh warn 'A reboot is recommended'
+        ./scripts/log.sh info 'Some of the software you may have installed might require a reboot'
+
+  install-doctor:
+    desc: install doctor
+    cmds:
+      - |
+        if ! type {{.SOFTWARE}} &> /dev/null; then
+          ./scripts/log.sh info 'Installing `{{.SOFTWARE}}` via `curl -sS https://install.doctor/{{.SOFTWARE}} | bash`'
+          curl -sS https://install.doctor/{{.SOFTWARE}} | bash
+          ./scripts/log.sh success 'Successfully installed `{{.SOFTWARE}}`'
+        fi
+    status:
+      - type {{.SOFTWARE}} &> /dev/null || [[ "${container:=}" == "docker" ]]
+
+  path:add:
+    desc: Add to path
+    cmds:
+      - |
+        function ensureLocalPath() {
+          case "${SHELL}" in
+            */bash*)
+              if [[ -r "${HOME}/.bash_profile" ]]; then
+                SHELL_PROFILE="${HOME}/.bash_profile"
+              else
+                SHELL_PROFILE="${HOME}/.profile"
+              fi
+              ;;
+            */zsh*)
+              SHELL_PROFILE="${HOME}/.zshrc"
+              ;;
+            *)
+              SHELL_PROFILE="${HOME}/.profile"
+              ;;
+          esac
+          if [[ "$OSTYPE" == 'darwin'* ]] || [[ "$OSTYPE" == 'linux-gnu'* ]]; then
+            # shellcheck disable=SC2016
+            local PATH_STRING='PATH="$HOME/{{.PATH_STRING}}:$PATH"'
+            if ! grep -L "$PATH_STRING" "$SHELL_PROFILE" > /dev/null; then
+              echo -e "export ${PATH_STRING}\n" >> "$SHELL_PROFILE"
+              ./scripts/log.sh info "Updated the PATH variable to include ~/{{.PATH_STRING}} in $SHELL_PROFILE"
+            fi
+          elif [[ "$OSTYPE" == 'cygwin' ]] || [[ "$OSTYPE" == 'msys' ]] || [[ "$OSTYPE" == 'win32' ]]; then
+            ./scripts/log.sh error "Windows is not directly supported. Use WSL or Docker." && exit 1
+          elif [[ "$OSTYPE" == 'freebsd'* ]]; then
+            ./scripts/log.sh error "FreeBSD support not added yet" && exit 1
+          else
+            ./scripts/log.sh error "System type not recognized"
+          fi
+        }
+        ensureLocalPath
+
+  pipx:global:
+    desc: Install pipx globals
+    deps:
+      - :pipx
+      - :yq
+    vars:
+      PIPX_PACKAGES: ansible-base ansible-lint ansibler black blocklint docker flake8
+        mod-ansible-autodoc molecule molecule-docker molecule-vagrant pre-commit-hooks
+        proselint python-vagrant pywinrm
+    cmds:
+      - |
+        for PKG in {{.PIPX_PACKAGES}}; do
+          if ! type "$PKG" > /dev/null; then
+            ./scripts/log.sh info "Ensuring $PKG is installed"
+            pipx install "$PKG" &
+          else
+            ./scripts/log.sh info "$PKG is already installed"
+          fi
+        done
+        wait
+        ./scripts/log.sh success 'Successfully preloaded commonly used Python packages'
+
+  profile:add:
+    desc: Add to a profile
+    cmds:
+      - |
+        function addToProfile() {
+          case "${SHELL}" in
+            */bash*)
+              if [[ -r "${HOME}/.bash_profile" ]]; then
+                SHELL_PROFILE="${HOME}/.bash_profile"
+              else
+                SHELL_PROFILE="${HOME}/.profile"
+              fi
+              ;;
+            */zsh*)
+              SHELL_PROFILE="${HOME}/.zshrc"
+              ;;
+            *)
+              SHELL_PROFILE="${HOME}/.profile"
+              ;;
+          esac
+          if [[ "$OSTYPE" == 'darwin'* ]] || [[ "$OSTYPE" == 'linux-gnu'* ]]; then
+            # shellcheck disable=SC2016
+            local PROFILE_STRING='{{.PROFILE_STRING}}'
+            if ! grep -L "$PROFILE_STRING" "$SHELL_PROFILE" > /dev/null; then
+              echo -e "${PROFILE_STRING}\n" >> "$SHELL_PROFILE"
+              ./scripts/log.sh info 'Added `{{.PROFILE_STRING}}` to '"$SHELL_PROFILE"
+            fi
+          elif [[ "$OSTYPE" == 'cygwin' ]] || [[ "$OSTYPE" == 'msys' ]] || [[ "$OSTYPE" == 'win32' ]]; then
+            ./scripts/log.sh error "Windows is not directly supported. Use WSL or Docker." && exit 1
+          elif [[ "$OSTYPE" == 'freebsd'* ]]; then
+            ./scripts/log.sh error "FreeBSD support not added yet" && exit 1
+          else
+            ./scripts/log.sh error "System type not recognized"
+          fi
+        }
+        addToProfile
+
+  act:
+    desc: install act
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: act
+
+  allure:
+    desc: install allure
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: allure
+
+  brew:
+    desc: install brew
+    deps:
+      - common
+    run: once
+    cmds:
+      - task: brew:{{OS}}
+
+  brew:cask:
+    desc: install brew cask
+    deps:
+      - brew
+    run: when_changed
+    cmds:
+      - |
+        ./scripts/log.sh info 'Installing the `{{.CASK}}` Homebrew cask'
+        brew install --cask {{.CASK}}
+        ./scripts/log.sh success 'Successfully installed the `{{.CASK}}` Homebrew cask'
+    status:
+      - type {{.CASK}} &> /dev/null
+
+  brew:darwin:
+    desc: install brew (darwin)
+    cmds:
+      - |
+        ./scripts/log.sh info 'Ensuring Homebrew is installed and available'
+        if ! type brew &> /dev/null; then
+          rm -rf ~/.local/homebrew
+          mkdir -p ~/.local/homebrew
+          git clone https://github.com/Homebrew/brew ~/.local/homebrew
+          eval "$(~/.local/homebrew/bin/brew shellenv)"
+          ./scripts/log.sh info "Updating Homebrew"
+          brew update --force --quiet
+          chmod -R go-w "$(brew --prefix)/share/zsh"
+          ./scripts/log.sh success "Successfully installed Homebrew"
+          ./scripts/log.sh warn 'Homebrew was installed and requires a terminal profile reload'
+          ./scripts/log.sh info 'Please close/open the terminal and re-run the same command to continue'
+          exit 1
+        fi
+      - task: brew:utils
+    status:
+      - type brew &> /dev/null
+
+  brew:formulae:
+    desc: install brew formulae
+    deps:
+      - brew
+    run: when_changed
+    cmds:
+      - |
+        ./scripts/log.sh info 'Installing the `{{.FORMULAE}}` Homebrew package'
+        brew install {{.FORMULAE}}
+        ./scripts/log.sh success 'Successfully installed the `{{.FORMULAE}}` Homebrew package'
+    status:
+      - type {{.FORMULAE}} &> /dev/null
+
+  brew:linux:
+    desc: install brew:linux
+    run: once
+    cmds:
+      - |
+        ./scripts/log.sh info 'Ensuring Homebrew is installed and available'
+        function ensureSource() {
+          if ! (grep "/bin/brew shellenv" < "$1" &> /dev/null); then
+            echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> "$1"
+          fi
+        }
+        case "${SHELL}" in
+          */bash*)
+            if [[ -r "${HOME}/.bash_profile" ]]; then
+              SHELL_PROFILE="${HOME}/.bash_profile"
+            else
+              SHELL_PROFILE="${HOME}/.profile"
+            fi
+            ;;
+          */zsh*)
+            SHELL_PROFILE="${HOME}/.zshrc"
+            ;;
+          *)
+            SHELL_PROFILE="${HOME}/.profile"
+            ;;
+        esac
+        if ! type brew &> /dev/null; then
+          rm -rf ~/.local/homebrew
+          mkdir -p ~/.local/homebrew
+          git clone https://github.com/Homebrew/brew ~/.local/homebrew
+          eval "$(~/.local/homebrew/bin/brew shellenv)"
+          brew update --force --quiet
+          ensureSource "$SHELL_PROFILE"
+          ./scripts/log.sh warn 'Homebrew was installed and requires a terminal profile reload'
+          ./scripts/log.sh info 'Please close/open the terminal and re-run the same command to continue'
+          exit 1
+        fi
+    status:
+      - type brew &> /dev/null || [[ "$OPTIMIZED_IMAGE" == 'true' ]]
+
+  brew:utils:
+    desc: install brew utilities
+    run: once
+    cmds:
+      - |
+        ./scripts/log.sh info "Installing GNU-compatibility tools for macOS via Homebrew"
+        brew install coreutils findutils gnu-sed grep gnu-tar gawk
+        ./scripts/log.sh success "Successfully installed GNU-compatibility tools"
+      - task: :path:add
+        vars:
+          PATH_STRING: $(brew --prefix)/opt/coreutils/libexec/gnubin
+      - task: :path:add
+        vars:
+          PATH_STRING: $(brew --prefix)/opt/findutils/libexec/gnubin
+      - task: :path:add
+        vars:
+          PATH_STRING: $(brew --prefix)/opt/gnu-sed/libexec/gnubin
+      - task: :path:add
+        vars:
+          PATH_STRING: $(brew --prefix)/opt/grep/libexec/gnubin
+      - task: :path:add
+        vars:
+          PATH_STRING: $(brew --prefix)/opt/gnu-tar/libexec/gnubin
+    status:
+      - type gcp > /dev/null
+      - type gfind > /dev/null
+      - type gsed > /dev/null
+      - type ggrep > /dev/null
+      - type gtar > /dev/null
+      - type gawk > /dev/null
+
+  brew:windows:
+    desc: install brew (win)
+    cmds:
+      - task: common:windows
+
+  codeclimate:
+    desc: install codeclimate
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: codeclimate/formulae/codeclimate
+    status:
+      - type codeclimate > /dev/null
+
+  common:
+    desc: install common
+    run: once
+    cmds:
+      - task: common:{{OS}}
+
+  common:darwin:
+    desc: install common (darwin)
+    cmds:
+      - task: common:darwin:xcode
+
+  common:darwin:xcode:
+    desc: install common xcode (darwin)
+    vars:
+      CLT_STATUS:
+        sh: brew config | grep CLT
+    cmds:
+      - |
+        ./scripts/log.sh info "Installing xcode-select.. You might be prompted for a password"
+        ./scripts/log.sh info 'Running `xcode-select --install`'
+        xcode-select --install
+        ./scripts/log.sh success "Successfully installed xcode-select"
+    status:
+      - '[ "{{.CLT_STATUS}}" != "CLT: N/A" ]'
+
+  common:linux:
+    desc: install common Linux
+    vars:
+      LINUX_FAMILY:
+        sh: |
+          if [ -f "/etc/debian_version" ]; then
+            echo "debian"
+          elif [ -f "/etc/redhat-release" ]; then
+            echo "redhat"
+          elif [ -f "/etc/arch-release" ]; then
+            echo "archlinux"
+          else
+            echo "unknown"
+          fi
+    cmds:
+      - task: common:linux:{{.LINUX_FAMILY}}
+    status:
+      - '[[ "$OPTIMIZED_IMAGE" == "true" ]]'
+
+  common:linux:archlinux:
+    desc: install common linux (arch)
+    interactive: true
+    cmds:
+      - ./scripts/log.sh warn "Archlinux support for Homebrew is not very well documented.. if this does not work and you can get it working, please open a PR :)"
+      - |
+        sudo pacman update
+        sudo pacman -S base-devel curl file git procps-ng
+    status:
+      - type curl &> /dev/null
+      - type git &> /dev/null
+      - ldconfig -p | grep base-devel
+      - ldconfig -p | grep file
+      - ldconfig -p | grep procps-ng
+
+  common:linux:debian:
+    desc: install common (debian)
+    interactive: true
+    cmds:
+      - |
+        ./scripts/log.sh info 'Attempting to install Homebrew dependencies (sudo password required)'
+        sudo apt-get -y update
+        sudo apt-get install -y build-essential curl file git procps
+    status:
+      - type curl &> /dev/null
+      - type git &> /dev/null
+      - dpkg-query -l build-essential &> /dev/null
+      - dpkg-query -l file &> /dev/null
+      - dpkg-query -l procps &> /dev/null
+
+  common:linux:redhat:
+    desc: install common (redhat)
+    interactive: true
+    cmds:
+      - mkdir -p "$HOME/.config/mblabs"
+      - |
+        if [ ! -f "$HOME/.config/mblabs/yum-devtools-check-ran" ]; then
+          yum grouplist 'Development Tools' &> "$HOME/.config/mblabs/yum-devtools-check-ran"
+          DEV_TOOLS_NOT_INSTALLED="$(grep 'No groups match' < "$HOME/.config/mblabs/yum-devtools-check-ran" > /dev/null)"
+          if [[ "$DEV_TOOLS_NOT_INSTALLED" == '0' ]]; then
+            sudo yum groupinstall -y 'Development Tools'
+          fi
+          touch "$HOME/.config/mblabs/yum-devtools-check-ran"
+        fi
+        if ! rpm --quiet --query curl file git procps-ng; then
+          ./scripts/log.sh info 'Attempting to install Homebrew dependencies (sudo password required)'
+          sudo yum install -y curl file git procps-ng
+        fi
+        if [ -f '/etc/os-release' ]; then
+          source /etc/os-release
+          if [[ "$ID" == 'fedora' ]] && [ "$VERSION_ID" -gt "29" ]; then
+            if ! rpm --quiet --query libxcrypt-compat; then
+              ./scripts/log.sh info 'Attempting to install Fedora-specific Homebrew dependency (sudo password required)'
+              sudo yum -y install libxcrypt-compat
+            fi
+          fi
+        fi
+
+  common:linux:unknown:
+    desc: install common linux (unknown)
+    cmds:
+      - ./scripts/log.sh warn 'You are using an operating system that we do not directly support. Please make sure
+        the equivalent of `build-essential`, `curl`, `file`, `git`, and `procps` are installed.'
+
+  common:windows:
+    desc: install Windows
+    cmds:
+      - ./scripts/log.sh error "Windows is not supported. Try using a Windows WSL environment."
+      - exit 1
+
+  container-structure-test:
+    desc: install container-structure-list
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: container-structure-test
+
+  coreutils:
+    desc: install coreutils
+    deps:
+      - brew
+    run: once
+    cmds:
+      - |
+        if [ '{{OS}}' == 'darwin' ] && ! type gsed > /dev/null; then
+          ./scripts/log.sh info 'Installing GNU compatibility tools (i.e. `coreutils`)'
+          brew install coreutils
+          ./scripts/log.sh success 'Successfully installed GNU compatibility tools (i.e. `coreutils`)'
+        fi
+      - task: :path:add
+        vars:
+          PATH_STRING: $(brew --prefix)/opt/coreutils/libexec/gnubin
+    status:
+      - '[[ "{{OS}}" != "darwin" ]] && type gsed > /dev/null'
+
+  docker:
+    desc: install Docker
+    run: once
+    cmds:
+      - task: docker:{{OS}}
+
+  docker:darwin:
+    desc: install Docker (darwin)
+    run: once
+    cmds:
+      - task: brew:cask
+        vars:
+          CASK: docker
+      - task: exit:notice:restart
+    status:
+      - type docker > /dev/null
+
+  docker:linux:
+    desc: install Docker (linux)
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: docker
+      - task: exit:notice:restart
+    status:
+      - type docker > /dev/null
+
+  docker:windows:
+    desc: install Docker (windows)
+    cmds:
+      - task: common:windows
+
+  dockle:
+    desc: install dockle
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: goodwithtech/r/dockle
+    status:
+      - type dockle > /dev/null
+
+  exiftool:
+    desc: install exiftool
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: exiftool
+
+  exit:notice:reload:
+    desc: install exit notice reload
+    cmds:
+      - ./scripts/log.sh warn 'Software was installed that requires a terminal session reload'
+      - ./scripts/log.sh info 'Please close and re-open the terminal. Then, re-run the same command to continue.'
+      - exit 1
+
+  exit:notice:restart:
+    desc: install exit notice restart
+    cmds:
+      - ./scripts/log.sh warn 'Software was installed that requires a system reboot'
+      - ./scripts/log.sh info 'Please reboot the system and re-run the same command after rebooting'
+      - exit 1
+
+  gcloud:
+    desc: install gCloud
+    run: once
+    cmds:
+      - task: gcloud:{{OS}}
+    status:
+      - type gcloud > /dev/null
+
+  gcloud:darwin:
+    desc: install gcloud (dwarwin)
+    cmds:
+      - task: brew:cask
+        vars:
+          CASK: google-cloud-sdk
+
+  gcloud:linux:
+    desc: install gcloud (linux)
+    cmds:
+      - task: :install-doctor
+        vars:
+          SOFTWARE: googlecloudsdk
+
+  gcloud:windows:
+    desc: install gcloud (windows)
+    cmds:
+      - task: common:windows
+
+  gh:
+    desc: install gh
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: gh
+
+  git:
+    desc: install git
+    deps:
+      - common
+    run: once
+
+  gitleaks:
+    desc: install gitleaks
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: gitleaks
+
+  glab:
+    desc: install glab
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: glab
+
+  go:
+    desc: install Go
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: go
+
+  grype:
+    desc: install grype
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: anchore/grype/grype
+    status:
+      - type grype > /dev/null
+
+  jq:
+    desc: install jq
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: jq
+
+  node:
+    desc: install node
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: node
+
+  pipx:
+    desc: install pipx
+    run: once
+    cmds:
+      - task: pipx:{{OS}}
+    status:
+      - type pipx > /dev/null
+
+  pipx:darwin:
+    desc: install pipx (dwarwin)
+    deps:
+      - brew
+    cmds:
+      - ./scripts/log.sh info 'Installing pipx and running `pipx ensurepath`'
+      - brew install pipx
+      - pipx ensurepath
+      - ./scripts/log.sh success 'Successfully installed pipx'
+
+  pipx:linux:
+    desc: install pipx (linux)
+    deps:
+      - :python
+    cmds:
+      - ./scripts/log.sh info 'Installing pipx and running `pipx ensurepath`'
+      - python3 -m pip install --user pipx
+      - python3 -m pipx ensurepath
+      - ./scripts/log.sh success 'Successfully installed pipx'
+
+  pipx:windows:
+    desc: install pipx (linux)
+    cmds:
+      - ./scripts/log.sh error 'These scripts are not currently compatible with Windows. Try using WSL.'
+      - exit 1
+
+  poetry:
+    desc: install poetry
+    run: once
+    cmds:
+      - task: poetry:{{OS}}
+      - task: exit:notice:reload
+    status:
+      - type poetry > /dev/null
+
+  poetry:darwin:
+    desc: install poetry (darwin)
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: poetry
+
+  poetry:linux:
+    desc: install poetry (linux)
+    deps:
+      - pipx
+    cmds:
+      - pipx install poetry
+      - task: :path:add
+        vars:
+          PATH_STRING: .local/pipx/venvs/poetry/bin
+    status:
+      - type poetry > /dev/null
+
+  poetry:windows:
+    desc: install poetry (windows)
+    cmds:
+      - ./scripts/log.sh error 'These scripts are not currently compatible with Windows. Try using WSL.'
+      - exit 1
+
+  python:
+    desc: install Python
+    deps:
+      - brew # bug fix
+    run: once
+    cmds:
+      - task: python:{{OS}}
+
+  python:darwin:
+    desc: install Python (darwin)
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: python@3.10
+    status:
+      - type python3 > /dev/null
+
+  python:linux:
+    desc: install Python (linux)
+    run: once
+    cmds:
+      - task: :install-doctor
+        vars:
+          SOFTWARE: python
+
+  python:windows:
+    desc: install Python (windows)
+    cmds:
+      - ./scripts/log.sh error 'These scripts are not currently compatible with Windows. Try using WSL.'
+      - exit 1
+
+  rsync:
+    desc: install rsync
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: rsync
+
+  sshpass:
+    desc: install sshpass
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: hudochenkov/sshpass/sshpass
+    status:
+      - type sshpass > /dev/null
+
+  subrepo:
+    desc: install subrepo
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: git-subrepo
+    status:
+      - git subrepo --version > /dev/null || [[ "${container:=}" == "docker" ]]
+
+  tokei:
+    desc: install tokei
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: tokei
+
+  trivy:
+    desc: install trivy
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: aquasecurity/trivy/trivy
+    status:
+      - type trivy > /dev/null
+
+  vagrant:
+    desc: install vagrant
+    cmds:
+      - task: vagrant:{{OS}}
+
+  vagrant:darwin:
+    run: once
+    cmds:
+      - task: brew:cask
+        vars:
+          CASK: vagrant
+
+  vagrant:linux:
+    desc: install vagrant (linux)
+    run: once
+    cmds:
+      - task: :install-doctor
+        vars:
+          SOFTWARE: vagrant
+
+  virtualbox:
+    desc: install Virtualbox
+    cmds:
+      - task: virtualbox:{{OS}}
+      - task: exit:notice:restart
+    status:
+      - type vboxmanage > /dev/null
+
+  virtualbox:darwin:
+    desc: install VirtualBox (darwin)
+    run: once
+    cmds:
+      - task: brew:cask
+        vars:
+          CASK: virtualbox
+
+  virtualbox:linux:
+    desc: install VirtualBox (linux)
+    run: once
+    cmds:
+      - task: :install-doctor
+        vars:
+          SOFTWARE: virtualbox
+
+  vmware:
+    desc: install VMware
+    cmds:
+      - task: vmware:{{OS}}
+      - task: exit:notice:restart
+    status:
+      - type vmware > /dev/null
+
+  vmware:darwin:
+    run: once
+    cmds:
+      - task: brew:cask
+        vars:
+          CASK: vmware-fusion
+
+  vmware:linux:
+    run: once
+    cmds:
+      - task: :install-doctor
+        vars:
+          SOFTWARE: vmware
+
+  yq:
+    desc: install yq
+    run: once
+    cmds:
+      - task: brew:formulae
+        vars:
+          FORMULAE: yq
+
+  mani:
+    desc: Install mani
+    #silent: true
+    cmds:
+      - |
+        curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh || true
+    status:
+      - mani -v
+
+  sake:
+    desc: Install sake
+    silent: true
+    cmds:
+      - |
+        curl -sfL https://raw.githubusercontent.com/alajmo/sake/main/install.sh | sh || true
+    status:
+      - sake -v
+
+  via:githubapp:
+    desc: Attempt to install the latest version of an app via githubapp
+    silent: true
+    cmds:
+      - |
+        make --no-print-directory -C scripts/ghr-installer auto {{.APP}}

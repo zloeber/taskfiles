@@ -1,0 +1,19 @@
+version: "3"
+vars:
+  ROOT_PATH: '{{default "./" .ROOT_PATH}}'
+  LOCAL_BIN_PATH: '{{default "./.local/bin" .PROJECT_BIN_PATH}}'
+  PROJECT_BIN_BASE_PATH:
+    sh: 'dirname {{.PROJECT_BIN_PATH}}'
+  CONFIG_PATH: '{{default "{{.ROOT_PATH}}/config" .CONFIG_PATH}}'
+
+tasks:
+  show:
+    desc: Show extra variables
+    silent: true
+    cmds:
+      - |
+        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
+
+
+

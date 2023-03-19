@@ -1,0 +1,75 @@
+version: '3'
+
+tasks:
+  show:
+    desc: Show pi variables
+    silent: true
+    cmds:
+      - |
+        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "CONFIG_PATH: {{.CONFIG_PATH}}"
+        echo "SSH_HOST_KEY: {{.SSH_HOST_KEY}}"
+        echo "ARCH: {{ARCH}}"
+        echo "OS: {{OS}}"
+
+  init:docker:
+    desc: Initial software setup for docker running in ubuntu
+    deps:
+      - init:base
+    cmds:
+      - |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo usermod -aG docker ${USER}
+        sudo apt update -y
+        sudo apt install docker-ce docker-compose -y
+
+
+  init:kiosk:
+    desc: Setup packages for a local kiosk mode
+    deps:
+      - init:base
+    cmds:
+      - |
+        sudo apt install xdotool unclutter raspi-config -y
+        sudo apt-get install --no-install-recommends xserver-xorg -y
+        sudo apt-get install --no-install-recommends xinit -y
+        sudo apt-get install --no-install-recommends x11-xserver-utils -y
+        sudo apt-get install chromium-browser -y
+        sudo apt-get install matchbox-window-manager xautomation unclutter -y
+        sudo apt-get install fonts-noto-color-emoji -y
+        echo '
+        #!/bin/sh
+        xset -dpms     # disable DPMS (Energy Star) features.
+        xset s off     # disable screen saver
+        xset s noblank # don't blank the video device
+        matchbox-window-manager -use_titlebar no &
+        unclutter &    # hide X mouse cursor unless mouse activated
+        chromium-browser --display=:0 --kiosk --incognito --window-position=0,0 https://reelyactive.github.io/diy/pi-kiosk/' > ./kiosk
+        chmod +x ./kiosk
+        sudo raspi-config
+
+  update:
+    desc: Run apt updates and cleanup
+    cmds:
+      - |
+        sudo apt update
+        sudo apt upgrade -y
+        sudo apt autoremove
+
+  init:base:
+    desc: Install base packages
+    run: once
+    deps:
+      - update
+    cmds:
+      - |
+        sudo apt install -y \
+          ca-certificates dnsutils gnupg apt-utils openssl \
+          apt-transport-https software-properties-common \
+          make automake autoconf libreadline-dev \
+          libncurses-dev libssl-dev libyaml-dev \
+          libxslt-dev libffi-dev libtool unixodbc-dev \
+          unzip curl tmux zsh byobu jq rsync git \
+          python3-pip
+        sudo apt-get install -y --reinstall procps

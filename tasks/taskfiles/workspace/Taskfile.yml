@@ -1,0 +1,121 @@
+version: '3'
+
+#env:
+#  ROOT_PATH: '{{default "./" .ROOT_PATH}}'
+  # SSH_AUTHORIZED_KEY: ~/.ssh/id_rsa.pub
+  # SSH_HOST_KEY: 
+  #   sh: echo "~/.ssh/${HOST}-id_rsa.pub"
+  # PROFILE: '{{default "default" .PROFILE}}'
+  # ENVIRONMENT: '{{default "local" .ENVIRONMENT}}'
+  # CONFIG_FILE: '{{.CONFIG_PATH}}/profiles/{{.PROFILE}}.yml'
+  # SCRIPT_PATH: '{{.ROOT_PATH}}/scripts'
+  # DEFAULT_ENVIRONMENT_VARS: '{{.CONFIG_PATH}}/environments/defaults.env'
+  # ENVIRONMENT_VARS: config/environments/{{.ENVIRONMENT}}.env
+  # OVERRIDE_VARS: config/environments/{{.ENVIRONMENT}}.override.env
+  # PROJECT: 
+  #   sh: 'yq r {{.CONFIG_FILE}} project 2>/dev/null || echo "Unable to load {{.CONFIG_FILE}} via yq"'
+  # REPO_LIST: 
+  #   sh: yq r {{.CONFIG_FILE}} 'repos.*.url' 2>/dev/null || echo "Unable to load {{.CONFIG_FILE}} via yq"
+  # REPO_COUNT:
+  #   sh: yq r {{.CONFIG_FILE}} 'repos.*.url' --collect --length 2>/dev/null || echo "Unable to load {{.CONFIG_FILE}} via yq"
+  # REPO_PATHS:
+  #   sh: yq r {{.CONFIG_FILE}} 'repos.*.name' 2>/dev/null || echo "Unable to load {{.CONFIG_FILE}} via yq"
+  # WORKSPACE_PATH: "{{.WORKSPACE}}/{{.PROFILE}}"
+  # WORKSPACE:
+  #   sh: yq r {{.CONFIG_FILE}} workspace 2>/dev/null || echo "Unable to load {{.CONFIG_FILE}} via yq"
+includes:
+  install:
+    taskfile: ../install
+    optional: true
+tasks:
+  show:
+    desc: Show workspace variables
+    silent: true
+    cmds:
+      - |
+        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
+        echo "ARCH: {{ARCH}}"
+        echo "OS: {{OS}}"
+        echo "WORKSPACE={{.WORKSPACE}}"
+        echo "WORKSPACE_PATH={{.WORKSPACE_PATH}}"
+        echo "PROJECT={{.PROJECT}}"
+
+  sync:
+    desc: Initialize and sync workspace folders using vendir
+    deps: [ install:vendir ]
+    cmds:
+      - |
+        mkdir -p {{.WORKSPACE_PATH}}
+        cp -rf {{.WORKSPACE_CONFIG}} {{.WORKSPACE_PATH}}/vendir.yml
+        vendir sync -d {{.WORKSPACE_PATH}} -f {{.WORKSPACE_CONFIG}}
+
+  # show:repos:
+  #   desc: Show repositories in your workspace
+  #   silent: true
+  #   deps: [ install:yq, install:vendir ]
+  #   cmds:
+  #     - |
+  #       yq r {{.CONFIG_FILE}} 'repos.*.url' | cut -d "|" -f 2
+
+
+  show:tree:
+    desc: Show a tree view of workspace
+    cmds:
+      - |
+        tree {{.WORKSPACE_PATH}} -d --prune -L 2 || true
+
+  # prompt:yesno: 
+  #   desc: Are you sure?
+  #   cmds:
+  #     - |
+  #       ( read -p "This will blow away all of your {{.WORKSPACE}} folders. Are you sure? [y/N]: " sure && case "$sure" in [yY]) true;; *) false;; esac )
+
+  # update:
+  #   desc: Clone all repos in project to {{.WORKSPACE_PATH}}
+  #   deps: [ install:yq ]
+  #   cmds:
+  #     - |
+  #       mkdir -p {{.WORKSPACE_PATH}}
+  #       yq=yq) BASE_PATH={{.ROOT_PATH}} CONFIG_FILE={{.CONFIG_FILE}} {{.SCRIPT_PATH}}/workspace.sh
+
+  remove: 
+    desc: Removes entire workspace
+    deps: [ prompt:yesno ]
+    cmds:
+      - |
+        rm -rf {{.WORKSPACE_PATH}} || true
+
+  vscode:
+    desc: launch vscode for task element {{.TARGET}}
+    silent: true
+    cmds:
+      - |
+        code ./{{.WORKSPACE_PATH}}/{{.TARGET}}/
+
+  vscode:select:
+    desc: Use fzf to select a workspace to launch vscode against
+    cmds:
+      - |
+        SELECTION=./find {{.WORKSPACE_PATH}} -type d -depth 1 -not -path '*/\.*' -prune -print | sort | fzf && \
+        [ "$SELECTION" != "./" ] && code "$SELECTION" || true
+
+  select:
+    desc: Use fzf to select a workspace to cd into
+    cmds:
+      - |
+        SELECTION=./find {{.WORKSPACE_PATH}} -type d -depth 1 -not -path '*/\.*' -prune -print | sort | fzf && \
+        [ "$SELECTION" != "./" ] && echo "cd $SELECTION" || true
+
+  # vscode:workspace:
+  #   desc: Create vscode workspace file
+  #   cmds:
+  #     - |
+  #       CONFIG_FILE={{.CONFIG_FILE}} REPO_PATHS="{{.REPO_PATHS}}" WORKSPACE={{.WORKSPACE}} PROJECT={{.PROJECT}} {{.SCRIPT_PATH}}/create-vscode-workspace.sh > {{.ROOT_PATH}}/umbrella.code-workspace
+
+  cd:repo:
+    desc: Use fzf to select a workspace to cd into
+    cmds:
+      - |
+        echo "cd ./$(find {{.WORKSPACE_PATH}} -type d -depth 1 -not -path '*/\.*' -prune -print | sort | fzf)"
+

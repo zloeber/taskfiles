@@ -1,0 +1,93 @@
+---
+version: '3'
+
+tasks:
+  pip:
+    desc: install PACKAGE via pip
+    deps:
+      - :install:python
+    run: when_changed
+    cmds:
+      - |
+        ./scripts/log.sh info 'Installing `{{.PACKAGE}}` with pip3'
+        pip3 install {{.PACKAGE}}
+        ./scripts/log.sh success 'Successfully installed pip3 package named `{{.PACKAGE}}`'
+    status:
+      - type {{.PACKAGE}} > /dev/null
+
+  pipx:
+    desc: install PACKAGE via pipx
+    deps:
+      - :install:python
+    run: when_changed
+    cmds:
+      - task: :install:pipx
+      - |
+        ./scripts/log.sh info 'Installing `{{.PACKAGE}}` with pipx'
+        pipx install {{.PACKAGE}}
+        ./scripts/log.sh success 'Successfully installed `{{.PACKAGE}}` with pipx'
+    status:
+      - type {{.PACKAGE}} > /dev/null
+
+  pytest:
+    run: once
+    cmds:
+      - task: pip
+        vars:
+          PACKAGE: pytest
+
+  pytest-cov:
+    run: once
+    cmds:
+      - task: pip
+        vars:
+          PACKAGE: pytest-cov
+
+  requirements:
+    desc: install python requirements files
+    deps:
+      - :install:python
+    run: once
+    cmds:
+      - task: requirements:poetry:prereqs
+      - task: requirements:poetry
+      - task: :{{if eq .REPOSITORY_TYPE "ansible"}}ansible:galaxy:requirements{{else}}donothing{{end}}
+    status:
+      - '[[ "$OPTIMIZED_IMAGE" == "true" ]]'
+
+  requirements:poetry:
+    desc: Install requirements via poetry
+    deps:
+      - :install:poetry
+    run: once
+    cmds:
+      - |
+        ./scripts/log.sh info 'Running `poetry install`'
+        poetry config virtualenvs.create false
+        poetry install
+        ./scripts/log.sh success '`poetry install` completed successfully'
+    sources:
+      - pyproject.toml
+    preconditions:
+      - sh: test -f pyproject.toml
+        msg: The `pyproject.toml` file is missing!
+
+  requirements:poetry:prereqs:
+    vars:
+      GCC5_MISSING_MESSAGE: 'It looks like your system is missing gcc-5 but gcc is available. You will be prompted
+        for a password to run:'
+    cmds:
+      - |
+        if ! which gcc-5 > /dev/null; then
+          if which gcc; then
+            if [ -w /usr/local/bin ]; then
+              ln -s "$(which gcc)" /usr/local/bin/gcc-5
+            else
+              ./scripts/log.sh info '{{.GCC5_MISSING_MESSAGE}}'
+              ./scripts/log.sh info '`sudo ln -s '"$(which gcc)"' /usr/local/bin/gcc-5`'
+              sudo ln -s "$(which gcc)" /usr/local/bin/gcc-5
+            fi
+          else
+            ./scripts/log.sh warn '`gcc` is missing.'
+          fi
+        fi

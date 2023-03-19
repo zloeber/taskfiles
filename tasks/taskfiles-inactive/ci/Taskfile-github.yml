@@ -1,0 +1,11 @@
+---
+version: '3'
+
+tasks:
+  actions:test:
+    deps:
+      - :install:act
+      - :install:docker
+    desc: Locally test the on-push GitHub Action event (only works for Linux containers)
+    cmds:
+      - act

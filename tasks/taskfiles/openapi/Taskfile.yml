@@ -1,0 +1,157 @@
+version: "3"
+
+tasks:
+  show:
+    desc: Show openapi variables
+    silent: true
+    cmds:
+      - |
+        echo "API_MANIFEST_PATH: {{.API_MANIFEST_PATH}}"
+        echo "APP_PATH: {{.APP_PATH}}"
+        echo "API_OUTPUT_PATH: {{.API_OUTPUT_PATH}}"
+        echo "PYTHON_VENV_PATH: {{.PYTHON_VENV_PATH}}"
+
+  # generate:api:
+  #   desc: Generate API code via openapi-generator-cli docker image
+  #   silent: true
+  #   cmds:
+  #     - |
+  #       docker run --rm -v "${PWD}:/local" \
+  #         openapitools/openapi-generator-cli generate \
+  #         -i ./openapi.yaml \
+  #         -g python \
+  #         -o /local/generated
+
+  build:
+    desc: Builds a single openapi.yaml file from the component manifests
+    cmds:
+      - |
+        echo "Building openapi.yaml from {{.API_MANIFEST_PATH}}/openapi.yaml"
+        npx swagger-cli bundle \
+          -o openapi.yaml -t yaml {{.API_MANIFEST_PATH}}/openapi.yaml
+        echo "Building dereferenced openapi.yaml manifest: {{.API_OUTPUT_PATH}}/openapi_deref.yaml"
+        npx swagger-cli bundle -r \
+          -o {{.API_OUTPUT_PATH}}/openapi_deref.yaml \
+          -t yaml {{.API_MANIFEST_PATH}}/openapi.yaml
+    sources:
+      - "{{.API_MANIFEST_PATH}}/**"
+    generates:
+      - "{{.API_OUTPUT_PATH}}/openapi_deref.yaml"
+
+  lint:
+    desc: Lints openapi.yaml file via spectral-cli
+    cmds:
+      - |
+        npx spectral lint openapi.yaml
+
+  generate:
+    desc: Generate API Python endpoint code based on the openapi spec file
+    silent: true
+    cmds:
+      - |
+        echo "Generating models/routes for {{.API_OUTPUT_PATH}}/openapi_deref.yaml"
+        pip install fastapi-code-generator
+        fastapi-codegen \
+          -t {{.API_MANIFEST_PATH}}/templates \
+          --input {{.API_OUTPUT_PATH}}/openapi_deref.yaml \
+          --output {{.API_OUTPUT_PATH}}
+    sources:
+      - "{{.API_MANIFEST_PATH}}/**"
+    generates:
+      - "{{.API_OUTPUT_PATH}}/**"
+
+  promote:
+    desc: Copy generated templates to project (overwrite)
+    silent: true
+    cmds:
+      - |
+        echo "Promoting generated API models (smgt/api/models/api.py)"
+        cp ./generated/models.py ./smgt/api/models/api.py
+        #echo "Promoting generated FastAPI routes (smgt/api/routes/generated.py)"
+        #cp ./generated/routers.py ./smgt/api/routes/generated.py
+        #echo "Promoting generated FastAPI unit tests to (test/api/test_generated.py)"
+        #cp ./generated/tests.py ./test/api/test_generated.py
+        cp ./openapi.yaml ./config/openapi.yml
+
+  run:
+    desc: Run openapi generated code stubs locally.
+    silent: true
+    cmds:
+      - |
+        source {{.PYTHON_VENV_PATH}}/bin/activate
+        python3 -m smgt.api --config_path config.yml --schema_path openapi.yaml
+  #        uvicorn app.generated.main-default:api --host 0.0.0.0 --port ${SERVICE_PORT:-5000}
+  generate:models:
+    desc: Generate pydantic models for openapi yaml (alternative)
+    cmds:
+      - |
+        source {{.PYTHON_VENV_PATH}}/bin/activate
+        pip install datamodel-code-generator
+        datamodel-codegen  \
+          --input openapi.yaml --input-file-type openapi --output {{.API_OUTPUT_PATH}}/model_alt.py
+
+  cherrybomb:install:
+    desc: Install cherrybomb API scanner
+    silent: true
+    cmds:
+      - |
+        platform='unknown'
+        unamestr=$(uname)
+        case $unamestr in
+          "SunOs") echo "\033[31;1m SOLARIS is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;;
+          "Darwin")  platform="mac_x86_64" ;;
+          "Linux")   platform="linux_gnu" ;;
+          "FreeBSD")     echo "\033[31;1m BSD is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;; 
+          "WindowsNT")    echo "\033[31;1m WINDOWS is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;; 
+          *)        echo "\033[31;1m unknown: $OSTYPE is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;;  
+        esac
+        echo "DETECTED OS - ${platform}";
+        filename="cherrybomb_${platform}"
+        url=https://cherrybomb.blstsecurity.com/download_cherrybomb
+        c_t="Content-Type: application/json"
+        payload="{\"file\":\"${filename}\"}"
+        presigned=$(curl -s ${url} -H "${c_t}" -d $payload);
+        pre=$(echo "$presigned" | sed -e 's/^"//' -e 's/"$//');
+        c=$(curl -s ${pre} -o {{.PYTHON_VENV_PATH}}/bin/cherrybomb);
+        mkdir -p ~/.cherrybomb 2> /dev/null
+        chmod +x {{.PYTHON_VENV_PATH}}/bin/cherrybomb
+    status:
+      - test -f {{.PYTHON_VENV_PATH}}/bin/cherrybomb
+
+  cherrybomb:
+    desc: Run Cherrybomb API endpoint scanner against OAS
+    deps: [cherrybomb:install]
+    cmds:
+      - |
+        source {{.PYTHON_VENV_PATH}}/bin/activate
+        cherrybomb oas -f {{.ROOT_PATH}}/openapi.yaml
+
+  docs:
+    desc: Generate openapi docs (redocs)
+    cmds:
+      - |
+        echo "Attempting to build documentation from root openapi.yaml"
+        npm install
+        mkdir -p docs/api
+        npx redoc-cli build {{.ROOT_PATH}}/openapi.yaml \
+          --output docs/api/index.html \
+          --options.onlyRequiredInSamples
+
+  run:docker:
+    desc: Run local api docker image
+    cmds:
+      - |
+        docker run -e MOCK_MODE=true --rm -it \
+        -p 5000:5000 \
+        --name={{.DOCKER_IMAGE}} {{.DOCKER_IMAGE}}:local \
+        uvicorn {{.API_APP_MODULE}} \
+        --proxy-headers \
+        --host 0.0.0.0 --port 5000
+
+  stepci:
+    desc: End to end API testing via stepci
+    silent: true
+    cmds:
+      - |
+        npm install stepci
+        npx stepci run test/workflow.yml

@@ -1,0 +1,130 @@
+version: "3"
+tasks:
+  show:
+    desc: Show aws variables for this task
+    silent: true
+    cmds:
+      - |
+        echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
+        echo "VERSION: {{.VERSION}}"
+        echo "AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-""}"
+        echo "AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-""}"
+        echo "AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-""}"
+
+  whoami:
+    desc: Aws sts identity
+    cmds:
+      - |
+        aws sts get-caller-identity
+
+
+
+# .PHONY: .dep/aws-support-tools
+# .dep/aws-support-tools: ## Install aws-support-tools
+#   git clone https://github.com/awslabs/aws-support-tools $(APP_PATH)/aws-support-tools
+
+# .PHONY: aws/find-lambda-eni/%
+# aws/find-lambda-eni/%: ## uses aws support tools to find eni for lambda
+#   $(APP_PATH)/aws-support-tools/Lambda/FindEniMappings/findEniAssociations --eni $(subst aws/find-lambda-eni/,,$@) --region $(AWS_DEFAULT_REGION)
+
+# .PHONY: aws/lambda-enis/%
+# aws/lambda-enis/%: ## uses aws to find lambda enis based on security group
+#   aws ec2 describe-network-interfaces --filter 'Name=description,Values="AWS Lambda VPC ENI*", Name=group-id,Values=$(subst aws/lambda-enis/,,$@)'
+
+# .PHONY: .dep/aws-cli/mac
+# .dep/aws-cli/mac: .dep/gomplate ## Install aws cli v2 for mac and add to $HOME/.local/bin path
+#   tmpdir=$$(mktemp -d) && \
+#   curl https://awscli.amazonaws.com/AWSCLIV2.pkg -o $${tmpdir}/AWSCLIV2.pkg && \
+#   $(gomplate) \
+#     --file $(ROOT_PATH)/extras/aws-mac.xml \
+#     --out "$${tmpdir}/choices.xml" && \
+#   installer -pkg $${tmpdir}/AWSCLIV2.pkg \
+#     -target CurrentUserHomeDirectory \
+#     -applyChoiceChangesXML "$${tmpdir}/choices.xml"
+#   @mkdir -p ${HOME}/.local/bin/
+#   @ln -sf ${HOME}/aws-cli/aws ${HOME}/.local/bin/aws
+#   @ln -sf ${HOME}/aws-cli/aws-cli/aws_completer ${HOME}/.local/bin/aws_completer
+
+# .PHONY: scp/instance/kubeconfig
+# scp/instance/kubeconfig: ## copy over ~/.kube/config to your local machine
+#   scp -i $(SSH_KEY_PATH) -i $(ROOT_PATH)/.local/signed-public-key-$(VAULTLOGIN_ENV).pem centos@$(INSTANCE_IP):~/.kube/config ~/.kube/remote_config
+
+# .PHONY: ssh/instance/cmd
+# ssh/instance/cmd: ## Spit out the ssh command to use to login to an instance after running vaultlogin
+#   @echo "ssh -i $(SSH_KEY_PATH) -i $(ROOT_PATH)/.local/signed-public-key-$(VAULTLOGIN_ENV).pem centos@$(INSTANCE_IP)"
+
+# .PHONY: aws/init
+# aws/init: ## Initialize AWS SSO Profile
+#   @aws configure sso --profile $(AWS_PROFILE)
+
+# .PHONY: aws/login
+# aws/login: ## Login via AWS SSO
+#   @aws sso login --profile $(AWS_PROFILE)
+
+# .PHONY: aws/profile
+# aws/profile: ## Setup default values for current env (run only once!)
+#   @echo '' >> $(AWS_CONFIG)
+#   @echo '[profile $(AWS_PROFILE)]' >> $(AWS_CONFIG)
+#   @aws configure set region $(AWS_DEFAULT_REGION)
+#   @aws configure set sso_region $(AWS_DEFAULT_REGION)
+#   @aws configure set sso_account_id $(AWS_ACCOUNT_ID)
+#   @aws configure set sso_start_url $(AWS_SSO_START_URL)
+#   @aws configure set sso_role_name $(AWS_SSO_ROLE_NAME)
+#   @aws configure set output $(AWS_DEFAULT_OUTPUT)
+#   @aws configure set default_username $(shell whoami)
+# # @aws configure set role_arn $(AWS_DEFAULT_ROLE_ARN)
+#   @aws configure set source_profile $(AWS_PROFILE)
+#   @echo "Aws profile configured with default values: $(AWS_PROFILE)"
+
+# .PHONY: show/aws
+# show/aws: ## Show aws env vars for environment
+#   @echo "export AWS_DEFAULT_REGION=$(AWS_DEFAULT_REGION)"
+#   @echo "export AWS_PAGER="
+#   @echo "export AWS_ROLE_ARN=$(AWS_DEFAULT_ROLE_ARN)"
+#   @echo "export AWS_PROFILE=$(AWS_PROFILE)"
+#   @echo "export AWS_CONFIG=$(AWS_CONFIG)"
+#   @cat "${HOME}/.aws/session_env"
+
+# .PHONY: aws/ec2/instances
+# aws/ec2/instances: ## List vault instances for environment
+#   @aws --profile $(AWS_PROFILE) --output text \
+#     ec2 describe-instances \
+#     --query 'Reservations[*].Instances[*].[Tags[?Key==`environment` && contains(Value, `$(ENVIRONMENT)`)].Value | [0],Tags[?Key==`Name`].Value | [0],State.Name,PrivateIpAddress]' | \
+#     column -t  -s , | sort
+
+# .PHONY: aws/s3/latest/backup
+# aws/s3/latest/backup: ## List s3 vault backups
+#   if [ -n "$(snapshot_name)" ] && [[ "$(snapshot_name)" =~ ^vault-$(ENVIRONMENT)-(primary|secondary)-[0-9]{19}.snap$$ ]]; then \
+#     echo "snapshot_name: $(snapshot_name)"; \
+#   else \
+#     echo "snapshot_name: $(snapshot_name)"; \
+#     aws --profile $(AWS_PROFILE) --no-cli-pager s3api list-objects-v2 --bucket "nwm-vault-$(ENVIRONMENT)-backups" --query 'sort_by(Contents, &LastModified)[-1].Key' --output=text --prefix "vault-$(ENVIRONMENT)"; \
+#   fi
+
+# .PHONY: aws/s3/backup/id
+# aws/s3/backup/id: ## List s3 version id for raft.snap
+#   @aws --profile $(AWS_PROFILE) --output json \
+#     s3api list-object-versions \
+#     --bucket nwm-vault-${ENVIRONMENT}-backups \
+#     --prefix raft.snap | jq -r '.Versions | map(select(.LastModified | . ))|map(select(.IsLatest | . = true))|sort_by(.LastModified)|reverse|.[0]'
+
+# .PHONY: aws/s3/backups
+# aws/s3/backups: ## List s3 vault backups
+#   @aws --profile $(AWS_PROFILE) --output text --no-cli-pager \
+#     s3api list-objects \
+#     --bucket nwm-vault-${ENVIRONMENT}-backups --query "Contents[].{Key: Key}"
+
+# .PHONY: aws/ec2/instances/json
+# aws/ec2/instances/json: ## List vault instances for environment (json)
+#   @aws --profile $(AWS_PROFILE) --output json \
+#     ec2 describe-instances \
+#     --query 'Reservations[*].Instances[*].[Tags[?Key==`environment` && contains(Value, `$(ENVIRONMENT)`)].Value | [0],Tags[?Key==`Name`].Value | [0],State.Name,PrivateIpAddress]' | \
+#     column -t | sort
+
+# # .PHONY: .aws/assume-role
+# # .aws/assume-role: ## Assume role for the environment for aws cli
+# #   @tmpsession=`aws sts assume-role --role-arn "$(AWS_DEFAULT_ROLE_ARN)" --role-session-name AWSCLI-$(ENVIRONMENT)-Session`; \
+# #     echo "export AWS_ACCESS_KEY_ID=`echo $$tmpsession | jq -r '.Credentials.AccessKeyId'`"; \
+# #     echo "export AWS_SECRET_ACCESS_KEY=`echo $$tmpsession | jq -r '.Credentials.SecretAccessKey'`"; \
+# #     echo "export AWS_SESSION_TOKEN=`echo $$tmpsession | jq -r '.Credentials.SessionToken'`"
+

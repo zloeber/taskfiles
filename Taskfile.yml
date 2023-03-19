@@ -1,0 +1,143 @@
+version: '3'
+vars:
+  ROOT_PATH:
+    sh: 'echo ${ROOT_PATH:-$(echo "$(cd "$( dirname -- "$0" )" && pwd)")}'
+  TARGET:
+    sh: 'echo "${TARGET:-"default"}"'
+  PROFILE:
+    sh: 'echo "${PROFILE:-"local"}"'
+  PROJECT:
+    sh: 'echo "$(basename {{.ROOT_PATH}})"'
+  LOCAL_BIN_PATH:
+    sh: 'echo "{{.ROOT_PATH}}/.local/bin"'
+  BUILD_DATE:
+    sh: "date '+%Y-%m-%d-%H:%M:%S'"
+  BUILD_DATE_SHORT:
+    sh: "date '+%Y-%m-%d-%H%M%S'"
+  GIT_LATEST_TAG:
+    sh: 'git tag -l | sort -r -V | head -n 1 2>/dev/null || echo "not a git repo"'
+  task_binary:
+    sh: |
+      if [ -f {{.LOCAL_BIN_PATH}}/task ]; then echo "{{.LOCAL_BIN_PATH}}/task"; else echo "task"; fi
+  asdf_path:
+    sh: if [ -d ~/.asdf ]; then echo "~/.asdf"; else echo "{{.ROOT_PATH}}/.asdf"; fi
+  TERM: screen-256color
+  DOCS_PATH: "{{.ROOT_PATH}}/docs"
+  DEPLOY_PATH: "{{.ROOT_PATH}}/deploy"
+  PUBLIC_PATH: "{{.ROOT_PATH}}/public"
+  CONFIG_PATH: "{{.ROOT_PATH}}/config"
+  CONFIG_FILE: "{{.ROOT_PATH}}/config/{{.TARGET}}.yml"
+  PYTHON_VENV_PATH: "{{.ROOT_PATH}}/.local"
+  SCRIPT_PATH: "{{.ROOT_PATH}}/scripts"
+  VERSION: '{{default "unknown" .GIT_LATEST_TAG}}'
+  SSH_AUTHORIZED_KEY: ~/.ssh/id_rsa.pub
+  SSH_HOST_KEY:
+    sh: echo "~/.ssh/${HOST}-id_rsa.pub"
+  WORKSPACE: "default"
+  WORKSPACE_PATH: "{{.ROOT_PATH}}/.workspaces/{{.WORKSPACE}}"
+  WORKSPACE_CONFIG: "{{.CONFIG_PATH}}/workspace.vendir.{{.WORKSPACE}}.yml"
+# env:
+#   AUTHOR_NAME: '{{default "{{.AUTHOR_NAME}}" "git" }}'
+#   AUTHOR_EMAIL: '{{default "{{.AUTHOR_EMAIL}}" "git@nowhere" }}'
+
+
+dotenv:
+  - '.SECRET'
+  - '{{.CONFIG_PATH}}/profiles/{{.PROFILE}}.env'
+  - '{{.CONFIG_PATH}}/environments/{{.TARGET}}.env'
+  - '{{.CONFIG_PATH}}/environments/{{.TARGET}}.override.env'
+
+
+includes:
+  ansible:
+    taskfile: "tasks/taskfiles/ansible"
+    optional: true
+  asdf:
+    taskfile: "tasks/taskfiles/asdf"
+    optional: true
+  aws:
+    taskfile: "tasks/taskfiles/aws"
+    optional: true
+  dynamodb:
+    taskfile: "tasks/taskfiles/dynamodb"
+    optional: true
+  git:
+    taskfile: "tasks/taskfiles/git"
+    optional: true
+  hugo:
+    taskfile: "tasks/taskfiles/hugo"
+    optional: true
+  install:
+    taskfile: "tasks/taskfiles/install"
+    optional: true
+  pi:
+    taskfile: "tasks/taskfiles/pi"
+    optional: true
+  steampipe:
+    taskfile: ./tasks/taskfiles/steampipe
+    optional: true
+  # kube:
+  #   taskfile: ./tasks/taskfiles/kube
+  #   optional: true
+  terraform:
+    taskfile: ./tasks/taskfiles/terraform
+    optional: true
+  docker:
+    taskfile: ./tasks/taskfiles/docker
+    optional: true
+  python:
+    taskfile: ./tasks/taskfiles/python
+    optional: true
+  # # extras:
+  # #   taskfile: ./tasks/taskfiles/extras
+  # #   optional: true
+  # workspace:
+  #   taskfile: ./tasks/taskfiles/workspace
+  #   optional: true
+  workstation:
+    taskfile: "tasks/taskfiles/workstation"
+    optional: true
+
+tasks:
+  default:
+    silent: true
+    cmds:
+    - |
+      {{.task_binary}} -l
+
+  show:
+    desc: Show task variables
+    silent: true
+    cmds:
+    - |
+      echo "ROOT_PATH: {{.ROOT_PATH}}"
+      echo "PROFILE: {{.PROFILE}}"
+      echo "PROJECT: {{.PROJECT}}"
+      echo "VERSION: {{.VERSION}}"
+      echo "OS: {{OS}}"
+      echo "ARCH: {{ARCH}}"
+      echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
+      echo "DOCS_PATH: {{.DOCS_PATH}}"
+      echo "DEPLOY_PATH: {{.DEPLOY_PATH}}"
+      echo "PUBLIC_PATH: {{.PUBLIC_PATH}}"
+      echo "CONFIG_PATH: {{.CONFIG_PATH}}"
+      echo "PYTHON_VENV_PATH: {{.PYTHON_VENV_PATH}}"
+      echo "SCRIPT_PATH: {{.SCRIPT_PATH}}"
+      echo "BUILD_DATE: {{.BUILD_DATE}}"
+      echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
+      echo "task_binary: {{.task_binary}}"
+      echo "TASKFILE_BASE: tasks/taskfiles"
+
+  show:all:
+    desc: Show all output for subtasks groups as well
+    silent: true
+    cmds:
+    - |
+      echo "## Show ##";
+      {{.task_binary}} show
+      echo ""
+      for taskitem in $({{.task_binary}} -l | cut -d " " -f2 | grep show | sed 's/.$//'); do
+        echo "## Show - ${taskitem} ##";
+        {{.task_binary}} $taskitem;
+        echo "";
+      done

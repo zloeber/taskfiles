@@ -1,0 +1,86 @@
+version: "3"
+vars:
+  tools_versions: "{{.ROOT_PATH}}/.tools-versions"
+
+tasks:
+  show:
+    desc: "Show asdf variables"
+    silent: true
+    cmds:
+      - |
+        echo "tools_versions: {{.tools_versions}}"
+        echo "asdf_path: {{.asdf_path}}"
+        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
+
+  find:
+    desc: "Find asdf plugin"
+    silent: true
+    cmds:
+      - |
+        if [[ "{{.PLUGIN}}" == "" ]]; then
+          echo "PLUGIN variable required!"
+        else
+          echo "Looking for {{.PLUGIN}} in asdf plugins"
+          asdf plugin list all | grep {{.PLUGIN}}
+        fi
+
+  add:
+    desc: "Add a plugin and install latest version"
+    silent: true
+    cmds:
+      - |
+        if [[ "{{.PLUGIN}}" == "" ]]; then
+          echo "PLUGIN variable required!"
+        else
+          source {{.asdf_path}}/asdf.sh
+          echo "attempting to add plugin: {{.PLUGIN}}"
+          asdf plugin add {{.PLUGIN}} && asdf install {{.PLUGIN}} latest
+        fi
+
+  install:
+    desc: Install asdf
+    silent: true
+    cmds:
+      - git clone https://github.com/asdf-vm/asdf.git {{.asdf_path}} || true
+    status:
+      - test -d {{.asdf_path}}
+
+  update:
+    desc: Update asdf
+    silent: true
+    cmds:
+      - |
+        source {{.asdf_path}}/asdf.sh
+        asdf update
+
+  uninstall:
+    desc: Uninnstall asdf
+    silent: true
+    cmds:
+      - |
+        rm -rf "{{.asdf_path}}"
+
+  init:
+    desc: Install asdf defined plugins
+    silent: true
+    deps: [install]
+    cmds:
+      - |
+        tool_versions=${TOOL_VERSIONS:-"$(pwd)/.tool-versions"}
+        if ! test -e "${tool_versions}"; then
+          tool_versions="{{.ROOT_PATH}}/.tool-versions"
+        fi
+        echo "tool_versions: ${tool_versions}"
+        if test -e "${tool_versions}"; then
+          source {{.asdf_path}}/asdf.sh
+          $(cut -d' ' -f1 {{.ROOT_PATH}}/.tool-versions|xargs -i asdf plugin add  {}) || true
+          asdf install
+        else
+          echo "tool_versions does not exist: ${tool_versions}"
+        fi
+
+  bootstrap:
+    desc: Install asdf, install found plugins to defined version.
+    silent: true
+    deps: [install, init, update]

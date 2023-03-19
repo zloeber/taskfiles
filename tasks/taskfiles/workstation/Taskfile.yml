@@ -1,0 +1,191 @@
+version: '3'
+
+tasks:
+  show:
+    desc: Show pi variables
+    silent: true
+    cmds:
+      - |
+        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "CONFIG_PATH: {{.CONFIG_PATH}}"
+        echo "SSH_HOST_KEY: {{.SSH_HOST_KEY}}"
+        echo "ARCH: {{ARCH}}"
+        echo "OS: {{OS}}"
+  init:ubuntu:
+    desc: Initial software setup for a pi running ubuntu
+    cmds:
+      - |
+        sudo apt update
+        sudo apt autoremove
+        sudo apt upgrade -y
+        sudo apt install \
+          curl ca-certificates apt-transport-https software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo usermod -aG docker ${USER}
+        sudo apt update -y
+        sudo apt install docker-ce -y
+        sudo systemctl status docker
+
+  install:base:
+    desc: Install base packages via apt (sudo)
+    run: once
+    cmds:
+      - |
+        sudo apt-get update
+        sudo apt install -y \
+          ca-certificates dnsutils gnupg apt-utils openssl \
+          apt-transport-https software-properties-common \
+          make automake autoconf libreadline-dev \
+          libncurses-dev libssl-dev libyaml-dev \
+          libxslt-dev libffi-dev libtool unixodbc-dev \
+          unzip curl tmux zsh byobu jq rsync git \
+          python3-pip
+        sudo apt-get install -y --reinstall procps
+  
+  install:syncthing:
+    desc: Install syncthing as a service for the current user
+    run: once
+    cmds:
+      - |
+        curl -s https://syncthing.net/release-key.txt | sudo apt-key add -
+        echo "deb https://apt.syncthing.net/ syncthing stable" | sudo tee /etc/apt/sources.list.d/syncthing.list
+        sudo apt install -y apt-transport-https
+        sudo apt update
+        sudo apt install -y syncthing
+        sudo systemctl enable syncthing@$(whoami).service
+        sudo systemctl start syncthing@$(whoami).service
+        sudo systemctl status syncthing@$(whoami).service
+        sudo ufw allow 22000/tcp
+
+  # # install:docker:
+  # #   desc: install Docker (darwin)
+  # #   run: once
+  # #   cmds:
+  # #     - task: brew:cask
+  # #       vars:
+  # #         CASK: docker
+  # #     - task: exit:notice:restart
+  # #   status:
+  # #     - type docker > /dev/null
+
+  require:binary:
+    desc: Ensures that a required binary exists
+    silent: true
+    cmds:
+      - |
+        function require() {
+            local commandname=$1
+            local not_found
+
+            for commandname; do
+                if ! command -v -- "${commandname}" > /dev/null 2>&1; then
+                    warn "Required binary check: ${commandname}"
+                    ((not_found++))
+                else
+                    success "Required binary check: ${commandname}"
+                fi
+            done
+
+            if ((not_found > 0)); then
+                error "Missing requirements: ${not_found}"
+            fi
+        }
+
+        require {{.BINARY}}
+
+  path:add:
+    desc: Adds PATH_STRING to your local PATH variable for your user profile
+    silent: true
+    cmds:
+      - |
+        function info () {
+            printf "\033[2K[ \033[00;34mINFO\033[0m ] $1\n"
+        }
+
+        function debug () {
+            if [ $DEBUG_ENABLED ]; then
+                info "${1}"
+            fi
+        }
+
+        function eecho () {
+            printf "\033[2K[ \033[00;34mINFO\033[0m ] $1\n"
+        }
+
+        function success () {
+            printf "\r\033[2K[ \033[00;32mOK\033[0m ] $1\n"
+        }
+
+        function error () {
+            local message=${1:-"Script Failure"}
+            local errorcode=${2:-1}
+            printf "\r\033[2K[\033[0;31mERROR\033[0m] $message\n"
+            if [[ "${CI}" == "true"  ]]; then
+                exit $errorcode
+            else
+                return $errorcode
+            fi
+        }
+
+        function warn () {
+            printf "\r\033[2K[\033[0;33mWARNING\033[0m] $1\n"
+        }
+
+
+        function ensureLocalPath() {
+          case "${SHELL}" in
+            */bash*)
+              if [[ -r "${HOME}/.bash_profile" ]]; then
+                SHELL_PROFILE="${HOME}/.bash_profile"
+              else
+                SHELL_PROFILE="${HOME}/.profile"
+              fi
+              ;;
+            */zsh*)
+              SHELL_PROFILE="${HOME}/.zshrc"
+              ;;
+            *)
+              SHELL_PROFILE="${HOME}/.profile"
+              ;;
+          esac
+          if [[ "{{OS}}" == 'darwin'* ]] || [[ "{{OS}}" == 'linux'* ]]; then
+            local PATH_STRING='PATH="{{.PATH_STRING}}:'"${PATH}"'"'
+            info "PATH_STRING updated: ${PATH_STRING}"
+
+            if ! grep -L "$PATH_STRING" "$SHELL_PROFILE" > /dev/null; then
+              echo -e "export ${PATH_STRING}\n" >> "$SHELL_PROFILE"
+              info "Updated the PATH variable to include {{.PATH_STRING}} in $SHELL_PROFILE"
+            fi
+          elif [[ "$OSTYPE" == 'cygwin' ]] || [[ "$OSTYPE" == 'msys' ]] || [[ "$OSTYPE" == 'win32' ]]; then
+            error "Windows is not directly supported. Use WSL or Docker." && exit 1
+          elif [[ "$OSTYPE" == 'freebsd'* ]]; then
+            error "FreeBSD support not added yet" && exit 1
+          else
+            error "System type not recognized"
+          fi
+        }
+        if [[ "{{.PATH_STRING}}}" != "" ]]; then
+          info "PATH_STRING start: ${PATH_STRING}"
+          ensureLocalPath
+          success "PATH updated, reload your shell session (source ${SHELL_PROFILE})"
+        else
+          info "PATH_STRING: ${PATH_STRING}"
+          error "PATH_STRING is required or already in PATH variable!" && exit 1
+        fi
+
+  install:keybase:
+    desc: Install keybase app
+    silent: true
+    cmds:
+      - |
+        curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
+        sudo apt install ./keybase_amd64.deb
+        run_keybase
+
+  install:joplin:
+    desc: Install joplin note taking app
+    interactive: true
+    cmds:
+      - |
+        wget -O - https://raw.githubusercontent.com/laurent22/joplin/dev/Joplin_install_and_update.sh | bash
