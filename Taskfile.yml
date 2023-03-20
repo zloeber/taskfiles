@@ -50,52 +50,46 @@ dotenv:
 
 includes:
   ansible:
-    taskfile: "tasks/taskfiles/ansible"
+    taskfile: "./tasks/ansible"
     optional: true
   asdf:
-    taskfile: "tasks/taskfiles/asdf"
+    taskfile: "./tasks/asdf"
     optional: true
   aws:
-    taskfile: "tasks/taskfiles/aws"
+    taskfile: "./tasks/aws"
     optional: true
   dynamodb:
-    taskfile: "tasks/taskfiles/dynamodb"
+    taskfile: "./tasks/dynamodb"
     optional: true
   git:
-    taskfile: "tasks/taskfiles/git"
+    taskfile: "./tasks/git"
     optional: true
   hugo:
-    taskfile: "tasks/taskfiles/hugo"
+    taskfile: "./tasks/hugo"
     optional: true
   install:
-    taskfile: "tasks/taskfiles/install"
+    taskfile: "./tasks/install"
     optional: true
   pi:
-    taskfile: "tasks/taskfiles/pi"
+    taskfile: "./tasks/pi"
     optional: true
   steampipe:
-    taskfile: ./tasks/taskfiles/steampipe
+    taskfile: ./tasks/steampipe
     optional: true
   # kube:
-  #   taskfile: ./tasks/taskfiles/kube
+  #   taskfile: ./tasks/kube
   #   optional: true
   terraform:
-    taskfile: ./tasks/taskfiles/terraform
+    taskfile: ./tasks/terraform
     optional: true
   docker:
-    taskfile: ./tasks/taskfiles/docker
+    taskfile: ./tasks/docker
     optional: true
   python:
-    taskfile: ./tasks/taskfiles/python
+    taskfile: ./tasks/python
     optional: true
-  # # extras:
-  # #   taskfile: ./tasks/taskfiles/extras
-  # #   optional: true
-  # workspace:
-  #   taskfile: ./tasks/taskfiles/workspace
-  #   optional: true
   workstation:
-    taskfile: "tasks/taskfiles/workstation"
+    taskfile: "./tasks/workstation"
     optional: true
 
 tasks:
@@ -126,7 +120,7 @@ tasks:
       echo "BUILD_DATE: {{.BUILD_DATE}}"
       echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
       echo "task_binary: {{.task_binary}}"
-      echo "TASKFILE_BASE: tasks/taskfiles"
+      echo "TASKFILE_BASE: tasks"
 
   show:all:
     desc: Show all output for subtasks groups as well
@@ -137,7 +131,9 @@ tasks:
       {{.task_binary}} show
       echo ""
       for taskitem in $({{.task_binary}} -l | cut -d " " -f2 | grep show | sed 's/.$//'); do
-        echo "## Show - ${taskitem} ##";
-        {{.task_binary}} $taskitem;
-        echo "";
+        if [[ "$taskitem" != "show:all" ]]; then
+          echo "## Show - ${taskitem} ##";
+          {{.task_binary}} $taskitem;
+          echo "";
+        fi
       done

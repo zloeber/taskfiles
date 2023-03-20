@@ -19,6 +19,7 @@ tasks:
       echo "PROJECT_BIN_PATH: {{.PROJECT_BIN_PATH}}"
       echo "TF_PATH: {{.TF_PATH}}"
       echo "TF_PLAN_NAME: {{.TF_PLAN_NAME}}"
+      echo "TF_VERSION: {{.TF_VERSION}}"
       echo "terraform: {{.terraform}}"
 
   test:

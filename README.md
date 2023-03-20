@@ -1,7 +1,6 @@
 # Taskfiles Collection
 
-This is a library of taskfile.dev definitions for things you may do at a cli once in a while or maybe multiple times a day. These are categorized and then included in an ignored vendir synced location  project's root Taskfile.yaml file along with some supporting
-
+This is a library of taskfile.dev definitions for things you may do at a cli once in a while or maybe multiple times a day. These are categorized and then included in an ignored location synced via vendir (or similar solution).
 
 ## Notes
 
@@ -11,4 +10,4 @@ Taskfile uses golang templating and variable resolution that can be confusing. T
 
 - `env` blocks are just available to your script tasks as env vars without taskfile interference.
 
-So in general, you will want to not include additional variables in the included taskfiles that may be defined elsewhere. Just include them in the main Taskfile.yml to be safe in most cases.
+So in general, you will want to NOT include additional variables in the included taskfiles that may be defined elsewhere. Just include them in the main Taskfile.yml to be safe.

@@ -1,10 +1,5 @@
 version: "3"
 
-vars:
-  GITLAB_ADDR: 
-    sh: |
-      "echo ${GITLAB_URL:-"https://gitlab.com/api/v4"}"
-
 tasks:
   show:
     desc: Show kube variables

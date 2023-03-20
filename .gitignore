@@ -1,3 +1,5 @@
 .workspace
 .metagit
 .SECRET
+.taskfile
+.local
