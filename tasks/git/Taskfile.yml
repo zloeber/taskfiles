@@ -100,3 +100,23 @@ tasks:
       docker run -v ${PWD}:/path zricethezav/gitleaks:latest \
         detect -r /path/.local/reports \
         --source="/path"
+
+  ignore:update:
+    desc: Adds a line to an existing .gitignore file if not already present
+    silent: true
+    cmds:
+      - |
+        if [[ "{{.TO_IGNORE}}" != "" ]]; then
+          FILE=.gitignore
+          echo "Attempting to add {{.TO_IGNORE}} to $FILE"
+          if [ ! -f "$FILE" ]; then
+              echo "{{.TO_IGNORE}}" > "$FILE"
+          else
+              if ! grep -q '{{.TO_IGNORE}}' "$FILE"; then
+                echo -e "\n{{.TO_IGNORE}}" >> "$FILE"
+              fi
+          fi
+          sed -i '/^$/d' "$FILE"
+        else
+          echo "Need to define the TO_IGNORE variable"
+        fi

@@ -41,7 +41,7 @@ tasks:
         mkdir -p {{.local_bin_path}}
         curl -L https://carvel.dev/install.sh | K14SIO_INSTALL_BIN_DIR={{.local_bin_path}} bash
     status:
-      - type vendir &> /dev/null
+      - type {{.local_bin_path}}/vendir &> /dev/null
 
 
   chezmoi:

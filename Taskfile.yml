@@ -23,10 +23,6 @@ vars:
     sh: if [ -d ~/.asdf ]; then echo "~/.asdf"; else echo "{{.ROOT_PATH}}/.asdf"; fi
   TERM: screen-256color
   DOCS_PATH: "{{.ROOT_PATH}}/docs"
-  DEPLOY_PATH: "{{.ROOT_PATH}}/deploy"
-  PUBLIC_PATH: "{{.ROOT_PATH}}/public"
-  CONFIG_PATH: "{{.ROOT_PATH}}/config"
-  CONFIG_FILE: "{{.ROOT_PATH}}/config/{{.TARGET}}.yml"
   PYTHON_VENV_PATH: "{{.ROOT_PATH}}/.local"
   SCRIPT_PATH: "{{.ROOT_PATH}}/scripts"
   VERSION: '{{default "unknown" .GIT_LATEST_TAG}}'
@@ -43,10 +39,6 @@ vars:
 
 dotenv:
   - '.SECRET'
-  - '{{.CONFIG_PATH}}/profiles/{{.PROFILE}}.env'
-  - '{{.CONFIG_PATH}}/environments/{{.TARGET}}.env'
-  - '{{.CONFIG_PATH}}/environments/{{.TARGET}}.override.env'
-
 
 includes:
   ansible:
