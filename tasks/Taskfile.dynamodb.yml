@@ -1,0 +1,84 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+silent: true
+vars:
+  dynamodb_image: amazon/dynamodb-local:latest
+  dynamodb_container_name: dynamodb
+
+tasks:
+  show:
+    desc: Show dynamodb variables for this task
+    cmds:
+      - |
+        echo "dynamodb_image: {{.dynamodb_image}}"
+        echo "dynamodb_network: {{.dynamodb_network}}"
+        echo "DYNAMODB_ADDRESS: {{.DYNAMODB_ADDRESS}}"
+
+  start:
+    desc: Start a dynamodb local instance
+    cmds:
+      - |
+        docker run --name {{.dynamodb_container_name}} \
+          -p 8000:8000 \
+          --net {{.dynamodb_network}} \
+          --detach \
+          --rm \
+          {{.dynamodb_image}} \
+          -jar DynamoDBLocal.jar \
+          -sharedDb -dbPath .
+
+  stop:
+    desc: Stop a dynamodb local instance
+    cmds:
+      - docker stop {{.dynamodb_container_name}} 2>/dev/null || true
+
+  tables:
+    desc: list tables
+    cmds:
+      - |
+        aws dynamodb list-tables \
+          --no-cli-pager \
+          --endpoint-url http://localhost:8000
+
+  count:
+    desc: Count of all documents in the vault-controller table
+    cmds:
+      - |
+        aws dynamodb scan \
+          --no-cli-pager \
+          --table-name vault-controller \
+          --endpoint-url http://localhost:8000 \
+          --select "COUNT"
+
+  state:backup:
+    desc: Export a dynamodb schema for a local running instance.
+    deps: [install:dynamodump]
+    cmds:
+      - |
+        source {{.PYTHON_VENV_PATH}}/bin/activate
+        dynamodump -m backup -r local -s {{.DYNAMODB_TABLE}} \
+          --host localhost --port {{.DYNAMODB_PORT}} \
+          --accessKey local --secretKey local \
+          --dumpPath ./test/data/dynamodb
+
+  install:dynamodump:
+    desc: install dynamodump cli from pip
+    cmds:
+      - |
+        source {{.PYTHON_VENV_PATH}}/bin/activate
+        pip install --upgrade dynamodump
+    status:
+      - test -f {{.PYTHON_VENV_PATH}}/bin/dynamodump
+
+  state:restore:
+    desc: Restore a dynamodb backup
+    #silent: true
+    deps: [install:dynamodump]
+    cmds:
+      - |
+        source {{.PYTHON_VENV_PATH}}/bin/activate
+        dynamodump -m restore -r local -s {{.DYNAMODB_TABLE}} \
+          --host 127.0.0.1 --port {{.DYNAMODB_PORT}} \
+          --accessKey local --secretKey local \
+          --dumpPath ./test/data/dynamodb \
+          --noConfirm

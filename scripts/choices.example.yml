@@ -1,0 +1,8 @@
+local:
+  resources:
+    kubernetes:
+      - name: kind
+        type: kind
+    docker:
+      - name: dynamodb
+        image: aws/dynamodb:latest

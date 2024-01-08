@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+silent: true
+vars:
+  local_bin_path:
+    sh: if [[ "{{.local_bin_path}}" == "" ]]; then echo "{{.LOCAL_BIN_PATH}}"; else echo "{{.local_bin_path}}"; fi
+
+tasks:
+  sync:
+    desc: Attempt to install aqua cli
+    deps:
+      - 'install:aqua'
+    cmds:
+      - "{{.local_bin_path}}/aqua install"

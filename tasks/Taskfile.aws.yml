@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+silent: true
+tasks:
+  show:
+    desc: Show variables for aws tasks
+    cmds:
+      - |
+        echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
+        echo "VERSION: {{.VERSION}}"
+        echo "AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-""}"
+        echo "AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-""}"
+        echo "AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-""}"
+
+  whoami:
+    desc: Aws sts identity
+    cmds:
+      - |
+        aws sts get-caller-identity
+
+
+  render:profile:
+    desc: Render an AWS cli config for the vault environments and display it on your screen
+    silent: true
+    summary: |
+      Render an AWS cli config for the vault environments and display it on your screen.
+
+      You can save the output to your default profile location:
+        task aws:render:profile > ~/.aws/config
+    cmds:
+      - |
+        gomplate -f config/aws_config.tmpl
+
+  login:
+    desc: Login to an aws profile
+    cmds:
+      - |
+        echo "Login via SSO to profile: {{.AWS_PROFILE}}"
+        aws --profile {{.AWS_PROFILE}} sso login

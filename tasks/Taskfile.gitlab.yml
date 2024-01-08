@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+silent: true
+vars:
+  GITLAB_PATH:
+    sh: |
+      git remote get-url origin | sed -Ee 's/.*:(.+)\.git/\1/'
+  GITLAB_URL:
+    sh: 'echo ${GITLAB_URL:-"https://gitlab.com"}'
+  GITLAB_UI_PATH: "{{.GITLAB_URL}}/{{.GITLAB_PATH}}"
+  GITLAB_TOKEN:
+    sh: echo ${GITLAB_TOKEN:-""}
+
+tasks:
+  show:
+    desc: Show gitlab variables for this task
+    cmds:
+      - |
+        echo "GITLAB_PATH: {{.GITLAB_PATH}}"
+        echo "GITLAB_UI_PATH: {{.GITLAB_UI_PATH}}"
+
+  ui:
+    desc: Open website for gitlab project
+    cmds:
+      - |
+        open {{.GITLAB_UI_PATH}}

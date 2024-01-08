@@ -3,3 +3,6 @@
 .SECRET
 .taskfile
 .local
+.llamafile
+venv
+workspace

@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+silent: true
+
+tasks:
+  show:
+    desc: Show variables for this task
+    cmds:
+      - |
+        echo "VERSION: {{.VERSION}}"
+        echo "local_bin_path: {{.local_bin_path}}"
+
+  config:llamafile:linux:
+    desc: Configure Linux to run llamafile 
+    cmds:
+      - |
+        sudo wget -O /usr/bin/ape https://cosmo.zip/pub/cosmos/bin/ape-$(uname -m).elf
+        sudo chmod +x /usr/bin/ape
+        sudo sh -c "echo ':APE:M::MZqFpD::/usr/bin/ape:' >/proc/sys/fs/binfmt_misc/register"
+        sudo sh -c "echo ':APE-jart:M::jartsr::/usr/bin/ape:' >/proc/sys/fs/binfmt_misc/register"
+
+  install:llava:
+    desc: Download the (large) LLaVA LLM tool
+    cmds:
+      - |
+        wget -O {{.local_bin_path}}/llava https://huggingface.co/jartine/llava-v1.5-7B-GGUF/resolve/main/llava-v1.5-7b-q4-main.llamafile
+        chmod +x {{.local_bin_path}}/llava

@@ -1,0 +1,104 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+silent: true
+vars:
+  LOCAL_ROOT_PATH:
+    sh: echo "$(cd "$( dirname -- "$0" )" && pwd)"
+  ROOT_PATH: '{{.ROOT_PATH | default .LOCAL_ROOT_PATH}}'
+  tools_versions: "{{.ROOT_PATH}}/.tools-versions"
+  asdf_path:
+    sh: echo "${HOME}/.asdf"
+
+tasks:
+  show:
+    desc: "Show variables for asdf tasks"
+    cmds:
+      - |
+        echo "tools_versions: {{.tools_versions}}"
+        echo "asdf_path: {{.asdf_path}}"
+        echo "ROOT_PATH: {{.ROOT_PATH}}"
+
+  find:
+    desc: "Find asdf plugin"
+    cmds:
+      - |
+        if [[ "{{.PLUGIN}}" == "" ]]; then
+          echo "PLUGIN variable required!"
+        else
+          echo "Looking for {{.PLUGIN}} in asdf plugins"
+          asdf plugin list all | grep {{.PLUGIN}}
+        fi
+
+  add:
+    desc: "Add a plugin and install latest version"
+    cmds:
+      - |
+        if [[ "{{.PLUGIN}}" == "" ]]; then
+          echo "PLUGIN variable required!"
+        else
+          /bin/bash {{.asdf_path}}/asdf.sh
+          echo "attempting to add plugin: {{.PLUGIN}}"
+          asdf plugin add {{.PLUGIN}} && asdf install {{.PLUGIN}} latest
+        fi
+
+  install:
+    desc: Install asdf
+    cmds:
+      - git clone https://github.com/asdf-vm/asdf.git {{.asdf_path}} || true
+    status:
+      - test -d {{.asdf_path}}
+
+  update:
+    desc: Update asdf
+    cmds:
+      - |
+        /bin/bash {{.asdf_path}}/asdf.sh
+        asdf update
+
+  uninstall:
+    desc: Uninnstall asdf
+    cmds:
+      - |
+        rm -rf "{{.asdf_path}}"
+
+  init:
+    desc: Install asdf defined plugins
+    deps: [install]
+    cmds:
+      - |
+        tool_versions=${TOOL_VERSIONS:-"$(pwd)/.tool-versions"}
+        if ! test -e "${tool_versions}"; then
+          tool_versions="{{.ROOT_PATH}}/.tool-versions"
+        fi
+        echo "tool_versions: ${tool_versions}"
+        if test -e "${tool_versions}"; then
+          /bin/bash {{.asdf_path}}/asdf.sh
+          $(cut -d' ' -f1 {{.ROOT_PATH}}/.tool-versions|xargs -i asdf plugin add  {}) || true
+          asdf install
+        else
+          echo "tool_versions does not exist: ${tool_versions}"
+        fi
+
+  bootstrap:
+    desc: Install asdf, install found plugins to defined version.
+    deps: [install, init, update]
+  
+  eject:
+    desc: Copy single binaries as defined in .tools_versions that have been installed to another path
+    cmds:
+      - |
+        # Only works for single binary installs. nodejs, python, etc. will not work
+        mkdir -p "{{.BIN_TARGET}}"
+
+        # Read the .tool-versions file and extract the tool and version
+        while IFS='  ' read -r tool version; do
+            # Get the installation path for the specified version
+            installation_path=$(asdf where $tool $version)
+            echo "Installing ${installation_path}/bin/${tool} (${version}) to {{.BIN_TARGET}}"
+            # Copy the binary to the target folder
+            cp -R "${installation_path}/bin/${tool}" "{{.BIN_TARGET}}" || echo "Unable to copy single binary: ${tool}"
+        done < {{.ROOT_PATH}}/.tool-versions
+    requires:
+      vars: [BIN_TARGET]
+

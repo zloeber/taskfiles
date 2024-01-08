@@ -1,0 +1,279 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+silent: true
+vars:
+  venv_path:
+    sh: echo ${PYTHON_VENV_PATH:-"{{.PYTHON_VENV_PATH}}"}
+  python: "{{.venv_path}}/bin/python"
+  pip3: "{{.venv_path}}/bin/pip3"
+  linter: "{{.venv_path}}/bin/flake8"
+  pandoc: "{{.venv_path}}/bin/pandoc"
+  pytest: "{{.venv_path}}/bin/py.test"
+  project: "{{.PROJECT}}"
+
+tasks:
+  show:
+    desc: Show python variables for this task
+    cmds:
+      - |
+        echo "venv_path: {{.venv_path}}"
+        echo "PACKAGE_NAME: {{.PACKAGE_NAME}}"
+        echo "project: {{.PROJECT}}"
+        echo "python: {{.python}}"
+        echo "python_project_path: {{.python_project_path}}"
+        echo "pip3: {{.pip3}}"
+        echo "linter: {{.linter}}"
+        echo "pytest: {{.pytest}}"
+
+  freeze:
+    desc: Emit requirements.txt
+    cmds:
+      - |
+        {{.pip3}} freeze > requirements.txt
+
+  lint:
+    desc: Lint
+    cmds:
+      - |
+        {{.linter}} {{.python_project_path}}
+
+  test:
+    desc: Unit test and lint
+    deps: [lint]
+    cmds:
+      - rm -rf docs/coverage
+      - |
+        {{.python}} -m pytest \
+        --cov-report=xml:coverage/tests.xml \
+        --cov-report=html:docs/coverage \
+        --cov={{.python_project_path}} \
+        --junitxml=coverage/tests.xml \
+        {{.python_test_path}}
+
+  quicktest:
+    desc: Unit tests only
+    cmds:
+      - |
+        {{.pytest}} --cov-report=term --cov={{.python_project_path}} {{.python_test_path}}
+
+  coverage:
+    desc: Coverage and lint
+    deps: [lint]
+    cmds:
+      - |
+        {{.pytest}} --cov-report=html --cov={{.python_project_path}} {{.python_test_path}}
+
+  docs:
+    desc: Create documentation
+    deps: [coverage]
+    cmds:
+      - |
+        mkdir -p docs/source/_static
+        mkdir -p docs/source/_templates
+        {{.pandoc}} --from=markdown --to=rst --output=README.rst README.md
+
+  format:
+    desc: Code formatting (black) test
+    cmds:
+      - |
+        source {{.venv_path}}/bin/activate
+        pip install -U black
+        black --check --line-length 100 --verbose -- {{.python_project_path}}
+
+  package:
+    deps:
+      - clean
+      - venv
+      - install
+      - build
+    desc: Create package
+    cmds:
+      - |
+        {{.python}} setup.py sdist
+
+  publish:jfrog:
+    desc: Publish to artifact repo to jfrog
+    cmds:
+      - |
+        CI_PROJECT_PATH=${CI_PROJECT_PATH:-"idam-pxm/api/smgt-api-ms"}
+        BASE_VERSION=$(cat {{.python_project_path}}/__init__.py | grep '__version__' | grep -o '".*"' | tr -d '"') || echo "unknown"
+        RELEASE_VERSION=${RELEASE_VERSION:-"${BASE_VERSION}"}
+
+        echo "CI_PROJECT_PATH: ${CI_PROJECT_PATH}"
+        echo "RELEASE_VERSION: ${RELEASE_VERSION}"
+        echo "ARTIFACTORY_URL: ${ARTIFACTORY_URL}"
+
+        echo "=== Connecting to Artifactory"
+
+        jfrog c add Artifactory \
+            --interactive=false \
+            --url "${ARTIFACTORY_URL}" \
+            --user "${ARTIFACTORY_USER}" \
+            --access-token "${ARTIFACTORY_TOKEN}"
+
+        echo "=== Pointing pip to Artifactory PyPI registry"
+        jfrog pip-config --server-id-resolve Artifactory --repo-resolve pypi
+
+        echo "Ensure new version"
+        # does not protect against old versions but we should be ok about not re-publishing versions that are cached from nexus
+        RELEASE_VERSION_URL="https://{{.ARTIFACTORY_HOST}}/artifactory/api/pypi-local/simple/${CI_PROJECT_PATH}/${RELEASE_VERSION}"
+
+        # we have to query the api for if the app version exists, and we grep for the 404 response. If no 404 response, it will return a null
+        # value so then we use the OR "||" to set the variable to "found"
+        PY_EXISTS=$(curl -L -s -u $ARTIFACTORY_USER:$ARTIFACTORY_TOKEN -X GET "$RELEASE_VERSION_URL" | grep '"status" : 404') || PY_EXISTS='found'
+        echo "Pypi package exists? ${PY_EXISTS}"
+
+        # if variable contains '"status" : 404' then we know the current version does not exist
+        if [[ $PY_EXISTS == *'"status" : 404'* ]]; then
+            echo "Version $RELEASE_VERSION does not exist"
+        # if we get an else, we got "found" so the version already exists
+        else
+            echo "The version you are trying to publish already exists..."
+            exit 1
+        fi
+
+        # Run publishing subprocess
+        echo "Publishing Python packages for $RELEASE_VERSION..."
+        jfrog rt upload \
+          "${PATH_TO_DIST}" "pypi/${CI_PROJECT_PATH}/${RELEASE_VERSION}/" \
+          --build-name "${CI_PROJECT_PATH}" \
+          --build-number "${RELEASE_VERSION}"
+
+  clean:
+    desc: Clean build files
+    cmds:
+      - rm -rf dist
+      - rm -rf docs/build
+      - rm -rf *.egg-info
+
+  venv:clean:
+    desc: Remove virtual environment
+    cmds:
+      - |
+        rm -rf {{.venv_path}}
+
+  venv:
+    desc: Start virtual environment
+    cmds:
+      - |
+        python3 -m venv {{.venv_path}}
+        source {{.venv_path}}/bin/activate
+        pip install pip --upgrade --index-url=https://pypi.org/simple/
+    status:
+      - test -d {{.venv_path}}
+
+  install:
+    desc: Install locally
+    cmds:
+      - |
+        source {{.venv_path}}/bin/activate
+        pip3 install \
+          --default-timeout=120 \
+          --index-url=https://pypi.org/simple/ \
+          --extra-index-url https://{{.ARTIFACTORY_HOST}}/artifactory/api/pypi/pypi-local/simple \
+          --upgrade \
+          --disable-pip-version-check \
+          --no-warn-conflicts \
+          -r requirements.txt \
+          -r requirements-dev.txt
+    status:
+      - test -e {{.venv_path}}/bin/uvicorn
+
+  build:
+    desc: Build
+    cmds:
+      - |
+        source {{.venv_path}}/bin/activate
+        pip install --editable .
+
+  fastapi:init:
+    desc: Configure fastapi components
+    cmds:
+      - '{{.pip3}} install "fastapi[all]"'
+      - "{{.pip3}} install uvicorn"
+    status:
+      - test -f {{.venv_path}}/bin/uvicorn
+
+  fastapi:uvicorn:
+    desc: Run fastapi uvicorn service
+    deps: [venv]
+    env:
+      DYNAMO_ENDPOINT: http://127.0.0.1:8000
+    cmds:
+      - |
+        source {{.venv_path}}/bin/activate
+        python {{.ROOT_PATH}}/app/main.py
+
+  stop:gunicorn:
+    desc: Stops gunicorn if running as a daemon
+    cmds:
+      - |
+        lsof -t -i tcp:5000 | xargs kill -9
+
+  bandit:
+    desc: Run bandit scans
+    deps: [venv]
+    cmds:
+      - |
+        pip3 install bandit
+        bandit --format screen --r {{.PACKAGE_NAME}}
+
+  # allure:download:
+  #   desc: Install allure cli
+  #   silent: true
+  #   deps: [venv]
+  #   cmds:
+  #     - |
+  #       pip3 install allure-pytest
+  #       if ! curl --fail --location --progress-bar --output "{{.venv_path}}/allure.zip" "https://github.com/allure-framework/allure2/releases/download/2.20.1/allure-2.20.1.zip"; then
+  #         echo "Could not find version of allure!"
+  #         exit 1
+  #       fi
+  #   status:
+  #     - test -f {{.venv_path}}/allure.zip
+
+  # allure:install:
+  #   desc: Install allure cli
+  #   silent: true
+  #   deps: [allure:download]
+  #   cmds:
+  #     - |
+  #       rm -rf {{.venv_path}}/bin/allure-bin
+  #       unzip {{.venv_path}}/allure.zip -d {{.venv_path}}/bin/allure-bin
+  #       cd {{.venv_path}}/bin
+  #       ln -sf ./allure-bin/allure-2.20.1/bin/allure ./allure
+  #   status:
+  #     - test -e {{.venv_path}}/bin/allure
+
+  # allure:serve:
+  #   desc: run local server
+  #   silent: true
+  #   cmds:
+  #     - |
+  #       {{.venv_path}}/bin/allure serve coverage/data
+
+  # allure:generate:
+  #   desc: run local server
+  #   silent: true
+  #   deps: [allure:install]
+  #   cmds:
+  #     - "{{.venv_path}}/bin/allure generate --clean --output docs/coverage coverage/data"
+
+  bumpversion:install:
+    desc: Bump2version install
+    deps: [venv]
+    cmds:
+      - |
+        source {{.venv_path}}/bin/activate
+        pip install bump2version
+    status:
+      - test -e {{.venv_path}}/bin/bump2version
+
+  bumpversion:
+    desc: Bump project version
+    deps: [bumpversion:install]
+    cmds:
+      - |
+        source {{.venv_path}}/bin/activate
+        {{.venv_path}}/bin/bump2version patch

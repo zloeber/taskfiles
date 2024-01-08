@@ -1,0 +1,13 @@
+workspace: workspace
+project: default
+repos:
+  - name: taskfiles
+    project: zloeber/taskfiles
+    url: git@github.com:zloeber/taskfiles.git
+    branches:
+      - main
+  - name: homelab-flux
+    project: zloeber/homelab-flux
+    url: git@github.com:zloeber/homelab-flux.git
+    branches:
+      - main

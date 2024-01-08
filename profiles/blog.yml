@@ -1,0 +1,23 @@
+workspace: workspace
+project: blog
+repos:
+  - name: zacharyloeber.com
+    project: zloeber/zacharyloeber.com
+    url: git@github.com:zloeber/zacharyloeber.com.git
+    branches:
+      - master
+  - name: dev.zacharyloeber.com-content
+    project: zloeber/dev.zacharyloeber.com-content
+    url: git@github.com:zloeber/dev.zacharyloeber.com-content.git
+    branches:
+      - master
+  - name: zacharyloeber.com-content
+    project: zloeber/zacharyloeber.com-content
+    url: git@github.com:zloeber/zacharyloeber.com-content.git
+    branches:
+      - master
+  - name: azure-pipeline-library
+    project: zloeber/azure-pipeline-library
+    url: git@github.com:zloeber/azure-pipeline-library.git
+    branches:
+      - master

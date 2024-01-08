@@ -1,0 +1,13 @@
+python-gitlab
+diagrams
+boto3
+hvac
+click
+prettytable
+ansible
+mdtoc
+pyyaml
+slack-bolt
+slack_sdk
+requests
+gitpython

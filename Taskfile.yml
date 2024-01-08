@@ -1,11 +1,12 @@
 version: '3'
-vars:
+silent: true
+env:
   ROOT_PATH:
-    sh: 'echo ${ROOT_PATH:-$(echo "$(cd "$( dirname -- "$0" )" && pwd)")}'
+    sh: echo "$(cd "$( dirname -- "$0" )" && pwd)"
   TARGET:
     sh: 'echo "${TARGET:-"default"}"'
   PROFILE:
-    sh: 'echo "${PROFILE:-"local"}"'
+    sh: 'echo "${PROFILE:-"default"}"'
   PROJECT:
     sh: 'echo "$(basename {{.ROOT_PATH}})"'
   LOCAL_BIN_PATH:
@@ -29,7 +30,6 @@ vars:
   SSH_AUTHORIZED_KEY: ~/.ssh/id_rsa.pub
   SSH_HOST_KEY:
     sh: echo "~/.ssh/${HOST}-id_rsa.pub"
-  WORKSPACE: "default"
   WORKSPACE_PATH: "{{.ROOT_PATH}}/.workspaces/{{.WORKSPACE}}"
   WORKSPACE_CONFIG: "{{.CONFIG_PATH}}/workspace.vendir.{{.WORKSPACE}}.yml"
 # env:
@@ -42,58 +42,87 @@ dotenv:
 
 includes:
   ansible:
-    taskfile: "./tasks/ansible"
+    taskfile: ./tasks/Taskfile.ansible.yml
+    optional: true
+  # aqua:
+  #   taskfile: ./tasks/Taskfile.aqua.yml
+  #   optional: true
+  argocd:
+    taskfile: ./tasks/Taskfile.argocd.yml
     optional: true
   asdf:
-    taskfile: "./tasks/asdf"
+    taskfile: ./tasks/Taskfile.asdf.yml
     optional: true
   aws:
-    taskfile: "./tasks/aws"
+    taskfile: ./tasks/Taskfile.aws.yml
     optional: true
-  dynamodb:
-    taskfile: "./tasks/dynamodb"
-    optional: true
-  git:
-    taskfile: "./tasks/git"
-    optional: true
-  hugo:
-    taskfile: "./tasks/hugo"
-    optional: true
-  install:
-    taskfile: "./tasks/install"
-    optional: true
-  pi:
-    taskfile: "./tasks/pi"
-    optional: true
-  steampipe:
-    taskfile: ./tasks/steampipe
-    optional: true
-  # kube:
-  #   taskfile: ./tasks/kube
-  #   optional: true
-  terraform:
-    taskfile: ./tasks/terraform
+  chatgpt:
+    taskfile: ./tasks/Taskfile.chatgpt.yml
     optional: true
   docker:
-    taskfile: ./tasks/docker
+    taskfile: ./tasks/Taskfile.docker.yml
+    optional: true
+  dynamodb:
+    taskfile: ./tasks/Taskfile.dynamodb.yml
+    optional: true
+  # extras:
+  #   taskfile: ./tasks/Taskfile.extras.yml
+  #   optional: true
+  gitlab:
+    taskfile: ./tasks/Taskfile.gitlab.yml
+    optional: true
+  git:
+    taskfile: ./tasks/Taskfile.git.yml
+    optional: true
+  hugo:
+    taskfile: ./tasks/Taskfile.hugo.yml
+    optional: true
+  # install:
+  #   taskfile: ./tasks/Taskfile.install.yml
+  #   optional: true
+  # kube:
+  #   taskfile: ./tasks/Taskfile.kube.yml
+  #   optional: true
+  # llm:
+  #   taskfile: ./tasks/Taskfile.llm.yml
+  #   optional: true
+  # openapi:
+  #   taskfile: ./tasks/Taskfile.openapi.yml
+  #   optional: true
+  pi:
+    taskfile: ./tasks/Taskfile.pi.yml
     optional: true
   python:
-    taskfile: ./tasks/python
+    taskfile: ./tasks/Taskfile.python.yml
+    optional: true
+  steampipe:
+    taskfile: ./tasks/Taskfile.steampipe.yml
+    optional: true
+  # template:
+  #   taskfile: ./tasks/Taskfile.template.yml
+  #   optional: true
+  terraform:
+    taskfile: ./tasks/Taskfile.terraform.yml
+    optional: true
+  vault:
+    taskfile: ./tasks/Taskfile.vault.yml
+    optional: true
+  workspace:
+    taskfile: ./tasks/Taskfile.workspace.yml
     optional: true
   workstation:
-    taskfile: "./tasks/workstation"
+    taskfile: ./tasks/Taskfile.workstation.yml
     optional: true
+
 
 tasks:
   default:
-    silent: true
     cmds:
     - |
       {{.task_binary}} -l
 
   show:
     desc: Show task variables
-    silent: true
     cmds:
     - |
       echo "ROOT_PATH: {{.ROOT_PATH}}"
@@ -104,9 +133,6 @@ tasks:
       echo "ARCH: {{ARCH}}"
       echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
       echo "DOCS_PATH: {{.DOCS_PATH}}"
-      echo "DEPLOY_PATH: {{.DEPLOY_PATH}}"
-      echo "PUBLIC_PATH: {{.PUBLIC_PATH}}"
-      echo "CONFIG_PATH: {{.CONFIG_PATH}}"
       echo "PYTHON_VENV_PATH: {{.PYTHON_VENV_PATH}}"
       echo "SCRIPT_PATH: {{.SCRIPT_PATH}}"
       echo "BUILD_DATE: {{.BUILD_DATE}}"
@@ -115,8 +141,7 @@ tasks:
       echo "TASKFILE_BASE: tasks"
 
   show:all:
-    desc: Show all output for subtasks groups as well
-    silent: true
+    desc: Show all variables for task namespaces
     cmds:
     - |
       echo "## Show ##";
@@ -129,3 +154,39 @@ tasks:
           echo "";
         fi
       done
+
+  list:
+    desc: List tasks by namespace (task list -- <namespace>)
+    cmds:
+      - |
+        if [[ "{{.CLI_ARGS}}" != "" ]]; then
+          {{.task_binary}} -l | grep {{default "" .CLI_ARGS}}
+        else
+          {{.task_binary}} -l
+        fi
+
+  # aws:cli2:osx:
+  #   desc: Install osx aws cli v2
+  #   silent: true
+  #   cmds:
+  #   - |
+  #     curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "./venv/AWSCLIV2.pkg"
+  #     installer -pkg ./venv/AWSCLIV2.pkg \
+  #       -target CurrentUserHomeDirectory
+  #     ln -s $HOME/aws-cli/aws ./venv/bin/aws
+  #     ln -s $HOME/aws-cli/aws_completer ./venv/bin/aws_completer
+  
+  toc:
+    desc: Update the table of contents in README.md
+    cmds:
+    - |
+      source venv/bin/activate
+      mdtoc README.md
+  
+  secrets:
+    desc: Create template .SECRETS file if one does not already exist.
+    cmds:
+      - copy ./config/.SECRETS.env ./.SECRETS
+    status:
+      - "test -f .SECRETS"
+

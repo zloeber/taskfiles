@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+silent: true
+tasks:
+  synth:
+    desc: run cdk8s python synth
+    cmds:
+      - |
+        pip3 install \
+          --default-timeout=120 \
+          --upgrade \
+          --disable-pip-version-check \
+          -I cdk8s --force
+        echo "running synth";
+        npm install
+        npx cdk8s synth
+        echo "CDK8s Synth successful";
+        echo "Review the generated manifest: ./generated/kubernetes/kubernetes.k8s.yaml"
