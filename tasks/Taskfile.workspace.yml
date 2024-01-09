@@ -4,14 +4,16 @@ version: '3'
 silent: true
 vars:
   ROOT_PATH: '{{default "." .ROOT_PATH}}'
-  BIN_PATH:
-    sh: echo "${HOME}/.asdf/shims"
   workspace_profiles: "{{.ROOT_PATH}}/profiles"
   workspaces: "workspace"
   PROFILE: '{{default "default" .PROFILE}}'
   CONFIG_FILE: "{{.workspace_profiles}}/{{.PROFILE}}.yml"
   PULL_UPDATES: '{{default "false" .PULL_UPDATES}}'
-
+  WORKSPACE:
+    sh: echo "$(yq '.workspace' {{.CONFIG_FILE}})"
+  WORKSPACE_PROJECT: 
+    sh: echo "$(yq '.project' {{.CONFIG_FILE}})"
+  TARGET_PATH: "{{.ROOT_PATH}}/{{.WORKSPACE}}/{{.WORKSPACE_PROJECT}}"
 tasks:
   show:
     desc: Show variables for workspace tasks
@@ -19,21 +21,14 @@ tasks:
     - |
       echo "ROOT_PATH: {{.ROOT_PATH}}"
       echo "CONFIG_FILE: {{.CONFIG_FILE}}"
-      yq="{{.BIN_PATH}}/yq"
-      WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
-      WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
-      TARGET_PATH="{{.ROOT_PATH}}/${WORKSPACE}/${WORKSPACE_PROJECT}"
       REPO_COUNT=$(yq '.repos | length' {{.CONFIG_FILE}})
-      CURRENT_PATH={{.ROOT_PATH}}
-      echo "WORKSPACE: ${WORKSPACE}"
+      echo "WORKSPACE: {{.WORKSPACE}}"
       echo "PROFILE: {{.PROFILE}}"
       echo "REPO_COUNT: ${REPO_COUNT}"
-      echo "CURRENT_PATH: ${CURRENT_PATH}"
-      echo "TARGET_PATH: ${TARGET_PATH}"
+      echo "TARGET_PATH: {{.TARGET_PATH}}"
 
   sync:
     desc: Initialize and/or sync workspace for profile
-    silent: true
     cmds:
       - |
         pushd () {
@@ -42,28 +37,23 @@ tasks:
         popd () {
           command popd "$@" > /dev/null
         }
-        yq="{{.BIN_PATH}}/yq"
-        WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
-        WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
-        TARGET_PATH="{{.ROOT_PATH}}/${WORKSPACE}/${WORKSPACE_PROJECT}"
+        TARGET_PATH="{{.ROOT_PATH}}/{{.WORKSPACE}}/{{.WORKSPACE_PROJECT}}"
         REPO_COUNT=$(yq '.repos | length' {{.CONFIG_FILE}})
-        CURRENT_PATH={{.ROOT_PATH}}
-        echo "WORKSPACE: ${WORKSPACE}"
+        echo "WORKSPACE: {{.WORKSPACE}}"
         echo "CONFIG_FILE: {{.CONFIG_FILE}}"
         echo "PROFILE: {{.PROFILE}}"
         echo "REPO_COUNT: ${REPO_COUNT}"
-        echo "CURRENT_PATH: ${CURRENT_PATH}"
-        echo "TARGET_PATH: ${TARGET_PATH}"
-        mkdir -p "${TARGET_PATH}" >/dev/null
+        echo "TARGET_PATH: {{.TARGET_PATH}}"
+        mkdir -p "{{.TARGET_PATH}}" >/dev/null
         echo "---"
         REPO_INDEX=0
-        pushd ${TARGET_PATH}
+        pushd {{.TARGET_PATH}}
         while [ $REPO_INDEX -lt $REPO_COUNT ]; do
-          cd ${TARGET_PATH}
+          cd {{.TARGET_PATH}}
           CURRENT_NAME=$(yq ".repos.[$REPO_INDEX].name" {{.CONFIG_FILE}})
           CURRENT_URL=$(yq ".repos.[$REPO_INDEX].url" {{.CONFIG_FILE}})
           CLONE_BRANCHES=$(yq ".repos.[$REPO_INDEX].branches | .[]" {{.CONFIG_FILE}})
-          CLONE_PATH="${TARGET_PATH}/${CURRENT_NAME}"
+          CLONE_PATH="{{.TARGET_PATH}}/${CURRENT_NAME}"
           echo "Sync Project: ${CURRENT_NAME}"
           #echo "CURRENT_URL: ${CURRENT_URL}"
           #echo "CLONE_PATH: ${CLONE_PATH}"
@@ -81,30 +71,27 @@ tasks:
                   #git pull
                   #git stash pop
               done
-              git checkout $CURRENT_PATH 2>/dev/null
+              git checkout {{.ROOT_PATH}} 2>/dev/null
           fi
           let REPO_INDEX=REPO_INDEX+1
           echo ""
         done
         popd
-        echo "Workspace Created: ${TARGET_PATH}"
+        echo "Workspace Created: {{.TARGET_PATH}}"
       - task: vscode:create
 
   vscode:select:
     desc: Use fzf to select a project in a workspace and open with vscode
-    silent: true
     cmds:
       - |
-        yq="{{.BIN_PATH}}/yq"
         WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
         WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
-        TARGET_PATH="${WORKSPACE}/${WORKSPACE_PROJECT}"
-        SELECTION=$(find "${TARGET_PATH}" -type d -depth 1 -not -path '*/\.*' -prune -print | sort | fzf) && \
+        TARGET_PATH="{{.WORKSPACE}}/{{.WORKSPACE_PROJECT}}"
+        SELECTION=$(find "{{.TARGET_PATH}}" -type d -depth 1 -not -path '*/\.*' -prune -print | sort | fzf) && \
         [ "$SELECTION" != "./" ] && code "${SELECTION}" || true
 
   select:
     desc: Use fzf to select a workspace and open with vscode
-    silent: true
     cmds:
       - |
         SELECTION=$(find "./{{.workspaces}}" -type d -depth 1 -not -path '*/\.*' -prune -print | sort | fzf) && \
@@ -112,23 +99,18 @@ tasks:
 
   vscode:create:
     desc: Create vscode workspace file relative to this project
-    silent: true
     cmds:
       - |
-        yq="{{.BIN_PATH}}/yq"
-        jq="{{.BIN_PATH}}/jq"
         WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
         WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
         CONFIG_FILE={{.CONFIG_FILE}}
         REPO_PATHS="$(yq '.repos.[].name' {{.CONFIG_FILE}})"
         VSCODEWS=$(cat ./scripts/vscode-workspace.tpl)
-
         for wspath in $REPO_PATHS
         do
             newpath="./$wspath"
             echo "Adding path: ${newpath}"
-            VSCODEWS=$(echo $VSCODEWS | ${jq} --arg newpath "$newpath" '.folders += [{ "path": $newpath }]')
+            VSCODEWS=$(echo $VSCODEWS | jq --arg newpath "$newpath" '.folders += [{ "path": $newpath }]')
         done
-
-        echo $VSCODEWS | ${jq} > {{.ROOT_PATH}}/${WORKSPACE}/${WORKSPACE_PROJECT}/workspace.code-workspace
-        echo "Workspace file for VSCode created: ./${WORKSPACE}/${WORKSPACE_PROJECT}/workspace.code-workspace"
+        echo $VSCODEWS | jq > {{.ROOT_PATH}}/{{.WORKSPACE}}/{{.WORKSPACE_PROJECT}}/workspace.code-workspace
+        echo "Workspace file for VSCode created: ./{{.WORKSPACE}}/{{.WORKSPACE_PROJECT}}/workspace.code-workspace"

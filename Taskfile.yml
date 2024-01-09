@@ -17,9 +17,6 @@ env:
     sh: "date '+%Y-%m-%d-%H%M%S'"
   GIT_LATEST_TAG:
     sh: 'git tag -l | sort -r -V | head -n 1 2>/dev/null || echo "not a git repo"'
-  task_binary:
-    sh: |
-      if [ -f {{.LOCAL_BIN_PATH}}/task ]; then echo "{{.LOCAL_BIN_PATH}}/task"; else echo "task"; fi
   asdf_path:
     sh: if [ -d ~/.asdf ]; then echo "~/.asdf"; else echo "{{.ROOT_PATH}}/.asdf"; fi
   TERM: screen-256color
@@ -119,7 +116,7 @@ tasks:
   default:
     cmds:
     - |
-      {{.task_binary}} -l
+      task -l
 
   show:
     desc: Show task variables
@@ -137,7 +134,6 @@ tasks:
       echo "SCRIPT_PATH: {{.SCRIPT_PATH}}"
       echo "BUILD_DATE: {{.BUILD_DATE}}"
       echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
-      echo "task_binary: {{.task_binary}}"
       echo "TASKFILE_BASE: tasks"
 
   show:all:
@@ -145,12 +141,12 @@ tasks:
     cmds:
     - |
       echo "## Show ##";
-      {{.task_binary}} show
+      task show
       echo ""
-      for taskitem in $({{.task_binary}} -l | cut -d " " -f2 | grep show | sed 's/.$//'); do
+      for taskitem in $(task -l | cut -d " " -f2 | grep show | sed 's/.$//'); do
         if [[ "$taskitem" != "show:all" ]]; then
           echo "## Show - ${taskitem} ##";
-          {{.task_binary}} $taskitem;
+          task $taskitem;
           echo "";
         fi
       done
@@ -160,9 +156,9 @@ tasks:
     cmds:
       - |
         if [[ "{{.CLI_ARGS}}" != "" ]]; then
-          {{.task_binary}} -l | grep {{default "" .CLI_ARGS}}
+          task -l | grep {{default "" .CLI_ARGS}}
         else
-          {{.task_binary}} -l
+          task -l
         fi
 
   # aws:cli2:osx:
