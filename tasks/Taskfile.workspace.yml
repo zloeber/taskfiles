@@ -3,12 +3,12 @@
 version: '3'
 silent: true
 vars:
+  ROOT_PATH: '{{default "." .ROOT_PATH}}'
   BIN_PATH:
     sh: echo "${HOME}/.asdf/shims"
   workspace_profiles: "{{.ROOT_PATH}}/profiles"
   workspaces: "workspace"
-  PROFILE:
-    sh: if [[ "{{.PROFILE}}" == "" ]]; then echo "default"; else echo "{{.PROFILE}}"; fi
+  PROFILE: '{{default "default" .PROFILE}}'
   CONFIG_FILE: "{{.workspace_profiles}}/{{.PROFILE}}.yml"
   PULL_UPDATES: '{{default "false" .PULL_UPDATES}}'
 
@@ -17,16 +17,15 @@ tasks:
     desc: Show variables for workspace tasks
     cmds:
     - |
-      echo "PROFILE: {{.PROFILE}}"
+      echo "ROOT_PATH: {{.ROOT_PATH}}"
       echo "CONFIG_FILE: {{.CONFIG_FILE}}"
       yq="{{.BIN_PATH}}/yq"
-      WORKSPACE=${WORKSPACE:-"$(${yq} '.workspace' {{.CONFIG_FILE}} )"}
-      WORKSPACE_PROJECT=$(${yq} '.project' {{.CONFIG_FILE}})
+      WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
+      WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
       TARGET_PATH="{{.ROOT_PATH}}/${WORKSPACE}/${WORKSPACE_PROJECT}"
-      REPO_COUNT=$(${yq} '.repos | length' {{.CONFIG_FILE}})
+      REPO_COUNT=$(yq '.repos | length' {{.CONFIG_FILE}})
       CURRENT_PATH={{.ROOT_PATH}}
       echo "WORKSPACE: ${WORKSPACE}"
-      
       echo "PROFILE: {{.PROFILE}}"
       echo "REPO_COUNT: ${REPO_COUNT}"
       echo "CURRENT_PATH: ${CURRENT_PATH}"
@@ -44,10 +43,10 @@ tasks:
           command popd "$@" > /dev/null
         }
         yq="{{.BIN_PATH}}/yq"
-        WORKSPACE=${WORKSPACE:-"$(${yq} '.workspace' {{.CONFIG_FILE}} )"}
-        WORKSPACE_PROJECT=$(${yq} '.project' {{.CONFIG_FILE}})
+        WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
+        WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
         TARGET_PATH="{{.ROOT_PATH}}/${WORKSPACE}/${WORKSPACE_PROJECT}"
-        REPO_COUNT=$(${yq} '.repos | length' {{.CONFIG_FILE}})
+        REPO_COUNT=$(yq '.repos | length' {{.CONFIG_FILE}})
         CURRENT_PATH={{.ROOT_PATH}}
         echo "WORKSPACE: ${WORKSPACE}"
         echo "CONFIG_FILE: {{.CONFIG_FILE}}"
@@ -61,9 +60,9 @@ tasks:
         pushd ${TARGET_PATH}
         while [ $REPO_INDEX -lt $REPO_COUNT ]; do
           cd ${TARGET_PATH}
-          CURRENT_NAME=$(${yq} ".repos.[$REPO_INDEX].name" {{.CONFIG_FILE}})
-          CURRENT_URL=$(${yq} ".repos.[$REPO_INDEX].url" {{.CONFIG_FILE}})
-          CLONE_BRANCHES=$(${yq} ".repos.[$REPO_INDEX].branches | .[]" {{.CONFIG_FILE}})
+          CURRENT_NAME=$(yq ".repos.[$REPO_INDEX].name" {{.CONFIG_FILE}})
+          CURRENT_URL=$(yq ".repos.[$REPO_INDEX].url" {{.CONFIG_FILE}})
+          CLONE_BRANCHES=$(yq ".repos.[$REPO_INDEX].branches | .[]" {{.CONFIG_FILE}})
           CLONE_PATH="${TARGET_PATH}/${CURRENT_NAME}"
           echo "Sync Project: ${CURRENT_NAME}"
           #echo "CURRENT_URL: ${CURRENT_URL}"
@@ -97,8 +96,8 @@ tasks:
     cmds:
       - |
         yq="{{.BIN_PATH}}/yq"
-        WORKSPACE=${WORKSPACE:-"$(${yq} '.workspace' {{.CONFIG_FILE}} )"}
-        WORKSPACE_PROJECT=$(${yq} '.project' {{.CONFIG_FILE}})
+        WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
+        WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
         TARGET_PATH="${WORKSPACE}/${WORKSPACE_PROJECT}"
         SELECTION=$(find "${TARGET_PATH}" -type d -depth 1 -not -path '*/\.*' -prune -print | sort | fzf) && \
         [ "$SELECTION" != "./" ] && code "${SELECTION}" || true
@@ -118,10 +117,10 @@ tasks:
       - |
         yq="{{.BIN_PATH}}/yq"
         jq="{{.BIN_PATH}}/jq"
-        WORKSPACE=${WORKSPACE:-"$(${yq} '.workspace' {{.CONFIG_FILE}} )"}
-        WORKSPACE_PROJECT=$(${yq} '.project' {{.CONFIG_FILE}})
+        WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
+        WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
         CONFIG_FILE={{.CONFIG_FILE}}
-        REPO_PATHS="$(${yq} '.repos.[].name' {{.CONFIG_FILE}})"
+        REPO_PATHS="$(yq '.repos.[].name' {{.CONFIG_FILE}})"
         VSCODEWS=$(cat ./scripts/vscode-workspace.tpl)
 
         for wspath in $REPO_PATHS
