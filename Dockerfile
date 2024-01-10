@@ -5,8 +5,8 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     PIP_NO_INPUT=1
 
-WORKDIR /home/appuser
-COPY --chown=appuser:appuser ./ ./
+#WORKDIR /home/appuser
+COPY ./ ./
 
 RUN \
   set -e \
@@ -36,7 +36,6 @@ RUN \
   && rm -rf /var/lib/apt/lists/* \
 #  && curl -o /usr/local/share/ca-certificates/some_additional_cert_to_trust.crt http://crl.domain.local/pki/some_additional_cert_to_trust.crt \
   && update-ca-certificates \
-  && chown -R appuser.appuser /home/appuser \
   && curl -o /tmp/powershell.deb https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb \
   && dpkg -i /tmp/powershell.deb \
   && apt-get update \
@@ -45,12 +44,12 @@ RUN \
   && pwsh -Command Install-Module powershell-yaml -Force \
   && rm -rf /tmp/*
 
-USER appuser
+#USER appuser
 
 RUN ./configure.sh \
     && echo "source ~/.asdf/asdf.sh" >> ./.bashrc
 
-COPY --chown=appuser:appuser ./config/.zshrc /home/appuser
-COPY --chown=appuser:appuser ./config/.p10k.zsh /home/appuser
+COPY ./config/.zshrc ./root
+COPY ./config/.p10k.zsh ./root
 
 SHELL [ "/bin/zsh" ]

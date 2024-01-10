@@ -3,6 +3,7 @@
 * [Taskfiles Collection](#taskfiles-collection)
 * [Configuration](#configuration)
   * [Notes](#notes)
+    * [Docker Image](#docker-image)
     * [Applications](#applications)
 
 <!---toc end-->
@@ -16,6 +17,19 @@ This is a library of [taskfile.dev](https://taskfile.dev) definitions for things
 This uses [asdf-vm](https://asdf-vm.com/) to manage binaries used by this application. You can install it and other requirements via `./.configure.sh`.
 
 ## Notes
+
+### Docker Image
+
+This includes a rudimentary docker image you can use to run most tasks. Simply build it with the task
+
+```bash
+task docker:build docker:shell
+```
+
+Then when you are in the running container start up zsh for a better shell experience
+```bash
+/bin/zsh
+```
 
 ### Applications
 

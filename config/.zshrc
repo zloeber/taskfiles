@@ -75,16 +75,16 @@ fi
 
 ## Path customizations
 BIN_PATH=$HOME/.local/bin
-#ASDF_BIN_PATH=$HOME/.asdf/bin
+ASDF_BIN_PATH=$HOME/.asdf/bin
 
 if [ -f $BIN_PATH/direnv ]; then
   eval "$($BIN_PATH/direnv hook zsh)"
 fi
 
-#if ls ${ASDF_BIN_PATH}/asdf &>/dev/null; then
-#  . $HOME/.asdf/asdf.sh
-#  fpath=(${ASDF_BIN_PATH}/completions $fpath)
-#fi
+if ls ${ASDF_BIN_PATH}/asdf &>/dev/null; then
+ . $HOME/.asdf/asdf.sh
+ fpath=(${ASDF_BIN_PATH}/completions $fpath)
+fi
 
 autoload -Uz compinit
 compinit

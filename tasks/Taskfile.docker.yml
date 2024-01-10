@@ -13,7 +13,7 @@ vars:
   DOCKER_IMAGE: '{{default "." .PROJECT}}'
   docker: docker
   IS_CI: "{{default 0 .IS_CI}}"
-
+  
 tasks:
   show:
     desc: Show terraform variables for this task
