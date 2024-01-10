@@ -6,7 +6,7 @@ vars:
   LOCAL_BIN_PATH: '{{default "./.local/bin" .PROJECT_BIN_PATH}}'
   PROJECT_BIN_BASE_PATH:
     sh: "dirname {{.PROJECT_BIN_PATH}}"
-  CONFIG_PATH: '{{default "{{.ROOT_PATH}}/config" .CONFIG_PATH}}'
+  CONFIG_PATH: '{{default "{{.ROOT_DIR}}/config" .CONFIG_PATH}}'
   KUBECTL_VERSION: '{{default "1.20.1" .KUBECTL_VERSION}}'
   kubectl: '{{.PROJECT_BIN_PATH}}/kubectl'
   KUBECONFIG: '{{.PROJECT_BIN_BASE_PATH}}/kubeconfig'
@@ -124,7 +124,7 @@ tasks:
   #       echo "VAULT_ADDRESS: ${VAULT_ADDRESS}"
   #       {{.kubectl}} --kubeconfig {{.KIND_KUBE_CONFIG}} create ns $(VAULT_NS) || true
   #       {{.helm}} -n $(VAULT_NS) --kubeconfig {{.KIND_KUBE_CONFIG}} upgrade -i \
-  #         vault-integration {{.ROOT_PATH}}/charts/vault-integration \
+  #         vault-integration {{.ROOT_DIR}}/charts/vault-integration \
   #         --set "default.cluster_id=kind" \
   #         --set "vault.owner=controller" \
   #         --set "vault.initEnabled=false" \
@@ -148,7 +148,7 @@ tasks:
 # vault/cronjob/template:
 # desc: Helm template the vault cronjob deployment
 #   {{.helm}} -n $(VAULT_NS) --kubeconfig {{.KIND_KUBE_CONFIG}} template \
-#     vault-integration {{.ROOT_PATH}}/charts/vault-integration \
+#     vault-integration {{.ROOT_DIR}}/charts/vault-integration \
 #     --set "default.cluster_id=kind" \
 #     --set "vault.owner=controller" \
 #     --set "vault.initialize=false" \
@@ -170,7 +170,7 @@ tasks:
 #   {{.kubectl}} --kubeconfig {{.KIND_KUBE_CONFIG}} \
 #     create ns $(VAULT_CERTMANAGER_NS) 2> /dev/null || true
 #   {{.helm}} -n $(VAULT_CERTMANAGER_NS) --kubeconfig {{.KIND_KUBE_CONFIG}} upgrade -i \
-#     vault-certmanager-integration {{.ROOT_PATH}}/charts/vault-integration \
+#     vault-certmanager-integration {{.ROOT_DIR}}/charts/vault-integration \
 #     --set "default.cluster_id=kind" \
 #     --set "vault.environment=local" \
 #     --set "vault.address=http://$(VAULT_ADDRESS):8200" \
@@ -194,7 +194,7 @@ tasks:
 # vault/certmanager/template:
 # desc: Helm template the vault certmanager integration
 #   {{.helm}} -n $(VAULT_CERTMANAGER_NS) template \
-#     vault-certmanager-integration {{.ROOT_PATH}}/charts/vault-integration \
+#     vault-certmanager-integration {{.ROOT_DIR}}/charts/vault-integration \
 #     --set "default.cluster_id=kind" \
 #     --set "vault.environment=local" \
 #     --set "vault.address=http://$(VAULT_ADDRESS):8200" \
@@ -217,7 +217,7 @@ tasks:
 
 # vault/rbac:
 # desc: Configure kube with vault required rbac rules
-#   {{.kubectl}} -n $(VAULT_NS) --kubeconfig {{.KIND_KUBE_CONFIG}} apply --filename {{.ROOT_PATH}}/config/token-reviewer.yml
+#   {{.kubectl}} -n $(VAULT_NS) --kubeconfig {{.KIND_KUBE_CONFIG}} apply --filename {{.ROOT_DIR}}/config/token-reviewer.yml
 
 # vault/token/test:
 # desc: Retrieves a reviewer token
@@ -233,7 +233,7 @@ tasks:
 # .vault/external:
 #   desc: Configure kube to point to an external endpoint for vault
 #   {{.kubectl}} -n $(VAULT_NS) --kubeconfig {{.KIND_KUBE_CONFIG}} \
-#   apply --filename {{.ROOT_PATH}}/config/external-vault.yml
+#   apply --filename {{.ROOT_DIR}}/config/external-vault.yml
 
 
   # helm/clean:
@@ -241,7 +241,7 @@ tasks:
   #   silent: true
   #   cmds:
   #     - | 
-  #       rm -rf {{.ROOT_PATH}}/.local/helm
+  #       rm -rf {{.ROOT_DIR}}/.local/helm
 
   # helm/config:
   #   desc: Configure helm to access remote vault instance

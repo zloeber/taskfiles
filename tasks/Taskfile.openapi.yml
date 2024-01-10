@@ -121,7 +121,7 @@ tasks:
     cmds:
       - |
         source {{.PYTHON_VENV_PATH}}/bin/activate
-        cherrybomb oas -f {{.ROOT_PATH}}/openapi.yaml
+        cherrybomb oas -f {{.ROOT_DIR}}/openapi.yaml
 
   docs:
     desc: Generate openapi docs (redocs)
@@ -130,7 +130,7 @@ tasks:
         echo "Attempting to build documentation from root openapi.yaml"
         npm install
         mkdir -p docs/api
-        npx redoc-cli build {{.ROOT_PATH}}/openapi.yaml \
+        npx redoc-cli build {{.ROOT_DIR}}/openapi.yaml \
           --output docs/api/index.html \
           --options.onlyRequiredInSamples
 

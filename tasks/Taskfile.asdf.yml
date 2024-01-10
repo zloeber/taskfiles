@@ -5,8 +5,8 @@ silent: true
 vars:
   LOCAL_ROOT_PATH:
     sh: echo "$(cd "$( dirname -- "$0" )" && pwd)"
-  ROOT_PATH: '{{.ROOT_PATH | default .LOCAL_ROOT_PATH}}'
-  tools_versions: "{{.ROOT_PATH}}/.tools-versions"
+  ROOT_PATH: '{{.ROOT_DIR | default .LOCAL_ROOT_PATH}}'
+  tools_versions: "{{.ROOT_DIR}}/.tools-versions"
   asdf_path:
     sh: echo "${HOME}/.asdf"
 
@@ -17,7 +17,7 @@ tasks:
       - |
         echo "tools_versions: {{.tools_versions}}"
         echo "asdf_path: {{.asdf_path}}"
-        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "ROOT_PATH: {{.ROOT_DIR}}"
 
   find:
     desc: "Find asdf plugin"
@@ -69,12 +69,12 @@ tasks:
       - |
         tool_versions=${TOOL_VERSIONS:-"$(pwd)/.tool-versions"}
         if ! test -e "${tool_versions}"; then
-          tool_versions="{{.ROOT_PATH}}/.tool-versions"
+          tool_versions="{{.ROOT_DIR}}/.tool-versions"
         fi
         echo "tool_versions: ${tool_versions}"
         if test -e "${tool_versions}"; then
           /bin/bash {{.asdf_path}}/asdf.sh
-          $(cut -d' ' -f1 {{.ROOT_PATH}}/.tool-versions|xargs -i asdf plugin add  {}) || true
+          $(cut -d' ' -f1 {{.ROOT_DIR}}/.tool-versions|xargs -i asdf plugin add  {}) || true
           asdf install
         else
           echo "tool_versions does not exist: ${tool_versions}"
@@ -98,7 +98,7 @@ tasks:
             echo "Installing ${installation_path}/bin/${tool} (${version}) to {{.BIN_TARGET}}"
             # Copy the binary to the target folder
             cp -R "${installation_path}/bin/${tool}" "{{.BIN_TARGET}}" || echo "Unable to copy single binary: ${tool}"
-        done < {{.ROOT_PATH}}/.tool-versions
+        done < {{.ROOT_DIR}}/.tool-versions
     requires:
       vars: [BIN_TARGET]
 

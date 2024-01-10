@@ -19,7 +19,7 @@ tasks:
     desc: Show extra variables
     cmds:
       - |
-        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "ROOT_PATH: {{.ROOT_DIR}}"
         echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
         echo "HUGO_TARGET_ENV: {{.HUGO_TARGET_ENV}}"
         echo "SITE: {{.SITE}}"

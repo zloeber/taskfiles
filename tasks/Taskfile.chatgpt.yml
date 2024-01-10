@@ -12,7 +12,7 @@ tasks:
     cmds:
       - |
         echo "aiac_path: {{.aiac_path}}"
-        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "ROOT_PATH: {{.ROOT_DIR}}"
         echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
         echo "OPENAI_API_KEY: {{.OPENAI_API_KEY}}"
 
@@ -41,12 +41,12 @@ tasks:
   #     - |
   #       tool_versions=${TOOL_VERSIONS:-"$(pwd)/.tool-versions"}
   #       if ! test -e "${tool_versions}"; then
-  #         tool_versions="{{.ROOT_PATH}}/.tool-versions"
+  #         tool_versions="{{.ROOT_DIR}}/.tool-versions"
   #       fi
   #       echo "tool_versions: ${tool_versions}"
   #       if test -e "${tool_versions}"; then
   #         source {{.aiac_path}}/aiac.sh
-  #         $(cut -d' ' -f1 {{.ROOT_PATH}}/.tool-versions|xargs -i aiac plugin add  {}) || true
+  #         $(cut -d' ' -f1 {{.ROOT_DIR}}/.tool-versions|xargs -i aiac plugin add  {}) || true
   #         aiac install
   #       else
   #         echo "tool_versions does not exist: ${tool_versions}"

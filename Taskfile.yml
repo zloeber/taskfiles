@@ -1,16 +1,14 @@
 version: '3'
 silent: true
 env:
-  ROOT_PATH:
-    sh: echo "$(cd "$( dirname -- "$0" )" && pwd)"
   TARGET:
     sh: 'echo "${TARGET:-"default"}"'
   PROFILE:
     sh: 'echo "${PROFILE:-"default"}"'
   PROJECT:
-    sh: 'echo "$(basename {{.ROOT_PATH}})"'
+    sh: 'echo "$(basename $(pwd))"'
   LOCAL_BIN_PATH:
-    sh: 'echo "{{.ROOT_PATH}}/.local/bin"'
+    sh: 'echo "{{.ROOT_DIR}}/.local/bin"'
   BUILD_DATE:
     sh: "date '+%Y-%m-%d-%H:%M:%S'"
   BUILD_DATE_SHORT:
@@ -18,16 +16,16 @@ env:
   GIT_LATEST_TAG:
     sh: 'git tag -l | sort -r -V | head -n 1 2>/dev/null || echo "not a git repo"'
   asdf_path:
-    sh: if [ -d ~/.asdf ]; then echo "~/.asdf"; else echo "{{.ROOT_PATH}}/.asdf"; fi
+    sh: if [ -d ~/.asdf ]; then echo "~/.asdf"; else echo "{{.ROOT_DIR}}/.asdf"; fi
   TERM: screen-256color
-  DOCS_PATH: "{{.ROOT_PATH}}/docs"
-  PYTHON_VENV_PATH: "{{.ROOT_PATH}}/.local"
-  SCRIPT_PATH: "{{.ROOT_PATH}}/scripts"
+  DOCS_PATH: "{{.ROOT_DIR}}/docs"
+  PYTHON_VENV_PATH: "{{.ROOT_DIR}}/.local"
+  SCRIPT_PATH: "{{.ROOT_DIR}}/scripts"
   VERSION: '{{default "unknown" .GIT_LATEST_TAG}}'
   SSH_AUTHORIZED_KEY: ~/.ssh/id_rsa.pub
   SSH_HOST_KEY:
     sh: echo "~/.ssh/${HOST}-id_rsa.pub"
-  WORKSPACE_PATH: "{{.ROOT_PATH}}/.workspaces/{{.WORKSPACE}}"
+  WORKSPACE_PATH: "{{.ROOT_DIR}}/.workspaces/{{.WORKSPACE}}"
   WORKSPACE_CONFIG: "{{.CONFIG_PATH}}/workspace.vendir.{{.WORKSPACE}}.yml"
 # env:
 #   AUTHOR_NAME: '{{default "{{.AUTHOR_NAME}}" "git" }}'
@@ -122,7 +120,7 @@ tasks:
     desc: Show task variables
     cmds:
     - |
-      echo "ROOT_PATH: {{.ROOT_PATH}}"
+      echo "ROOT_PATH: {{.ROOT_DIR}}"
       echo "PROFILE: {{.PROFILE}}"
       echo "PROJECT: {{.PROJECT}}"
       echo "VERSION: {{.VERSION}}"
@@ -176,7 +174,7 @@ tasks:
     desc: Update the table of contents in README.md
     cmds:
     - |
-      source venv/bin/activate
+      source {{.LOCAL_BIN_PATH}}/activate
       mdtoc README.md
   
   secrets:
@@ -186,3 +184,8 @@ tasks:
     status:
       - "test -f .SECRETS"
 
+  autocomplete:
+    desc: Setup task autocomplete
+    cmds:
+      - sudo curl https://raw.githubusercontent.com/go-task/task/main/completion/zsh/_task \
+        -o /usr/local/share/zsh/site-functions/_task

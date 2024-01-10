@@ -7,7 +7,7 @@ tasks:
     desc: Show variables for workstation tasks
     cmds:
       - |
-        echo "ROOT_PATH: {{.ROOT_PATH}}"
+        echo "ROOT_PATH: {{.ROOT_DIR}}"
         echo "CONFIG_PATH: {{.CONFIG_PATH}}"
         echo "SSH_HOST_KEY: {{.SSH_HOST_KEY}}"
         echo "ARCH: {{ARCH}}"

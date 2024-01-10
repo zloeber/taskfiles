@@ -69,7 +69,7 @@ tasks:
     desc: Example of using buildkit to extract files from an image
     cmds:
       - |
-        mkdir -p {{.ROOT_PATH}} /.local/artifacts
+        mkdir -p {{.ROOT_DIR}} /.local/artifacts
         {{.docker}} build -f {{.DOCKER_FILE}} \
           --target artifact \
             --output type=local,dest=./.local/artifacts .
