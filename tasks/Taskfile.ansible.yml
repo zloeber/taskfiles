@@ -1,41 +1,92 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
-version: '3'
+---
+version: "3"
 silent: true
 env:
-  ANSIBLE_CONFIG: "{{.PROJECT_DIR}}/ansible/ansible.cfg"
+  ANSIBLE_CONFIG: "{{.ROOT_DIR}}/ansible.cfg"
+  K8S_AUTH_KUBECONFIG: "{{.ROOT_DIR}}/kubeconfig"
 
 vars:
   ANSIBLE_PLAYBOOK_DIR: "{{.ANSIBLE_DIR}}/playbooks"
   ANSIBLE_INVENTORY_DIR: "{{.ANSIBLE_DIR}}/inventory"
-  # ANSIBLE_MASTER_GROUP: "master-nodes"
-  # ANSIBLE_WORKER_GROUP: "worker-nodes"
 
 tasks:
+
   show:
-    desc: Show ansible variables
+    desc: Show ansible task variables
     cmds:
       - |
-        echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
-        echo "ANSIBLE_CONFIG: {{.ANSIBLE_CONFIG}}"
+        echo "ANSIBLE_DIR: {{.ANSIBLE_DIR}}"
+        echo "ANSIBLE_CONFIG: ${ANSIBLE_CONFIG}"
+        echo "K8S_AUTH_KUBECONFIG: ${K8S_AUTH_KUBECONFIG}"
         echo "ANSIBLE_PLAYBOOK_DIR: {{.ANSIBLE_PLAYBOOK_DIR}}"
+        echo "ANSIBLE_INVENTORY_DIR: {{.ANSIBLE_INVENTORY_DIR}}"
 
-  # list:
-  #   desc: List all the k8s nodes
-  #   cmds:
-  #   - "ansible {{.ANSIBLE_MASTER_GROUP}}:{{.ANSIBLE_WORKER_GROUP}} -i {{.ANSIBLE_INVENTORY_DIR}}/home-cluster/hosts.yml --list-hosts"
-  #   silent: true
+  init:
+    desc: Install / Upgrade Ansible galaxy deps
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - source ../venv/bin/activate
+      - pip install --upgrade pip
+      - pip3 install --requirement requirements.txt
+      - ansible-galaxy install -r requirements.yml --roles-path ~/.ansible/roles --force
+      - ansible-galaxy collection install -r requirements.yml --collections-path ~/.ansible/collections --force
 
-  # ping:
-  #   desc: Ping all the k8s nodes
-  #   cmds:
-  #   - "ansible {{.ANSIBLE_MASTER_GROUP}}:{{.ANSIBLE_WORKER_GROUP}} -i {{.ANSIBLE_INVENTORY_DIR}}/home-cluster/hosts.yml --one-line -m 'ping'"
-  #   silent: true
+  list:
+    desc: List all the hosts
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible all -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml --list-hosts
 
-  # uptime:
-  #   desc: Uptime of all the k8s nodes
-  #   cmds:
-  #   - "ansible {{.ANSIBLE_MASTER_GROUP}}:{{.ANSIBLE_WORKER_GROUP}} -i {{.ANSIBLE_INVENTORY_DIR}}/home-cluster/hosts.yml --one-line -a 'uptime -p'"
-  #   silent: true
+  prepare:
+    desc: Prepare all the k8s nodes for running k3s
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible-playbook --ask-become-pass -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/cluster-prepare.yml
+
+  install:
+    desc: Install Kubernetes on the nodes
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible-playbook --ask-become-pass -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/cluster-installation.yml
+
+  upgrade:
+    desc: Upgrade Kubernetes on the nodes (currently this only upgrades kube-vip)
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible-playbook --ask-become-pass -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/cluster-upgrade.yml
+
+  nuke:
+    desc: Uninstall Kubernetes on the nodes
+    dir: "{{.ANSIBLE_DIR}}"
+    interactive: true
+    cmds:
+      - ansible-playbook --ask-become-pass -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/cluster-nuke.yml
+      - task: force-reboot
+
+  ping:
+    desc: Ping all the hosts
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible all -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml --one-line -m 'ping'
+
+  uptime:
+    desc: Uptime of all the hosts
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible all -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml --one-line -a 'uptime'
+
+  force-reboot:
+    desc: Reboot all the k8s nodes
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible-playbook --ask-become-pass -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/cluster-reboot.yml
+
+  force-poweroff:
+    desc: Shutdown all the k8s nodes
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible kubernetes -i {{.ANSIBLE_INVENTORY_DIR}}/hosts.yml -a '/usr/bin/systemctl poweroff' --become
 
   # clean-images:
   #   desc: Clean up stale container images
@@ -48,15 +99,17 @@ tasks:
   #   cmds:
   #   - "ansible {{.ANSIBLE_MASTER_GROUP}} -i {{.ANSIBLE_INVENTORY_DIR}}/home-cluster/hosts.yml --one-line -a 'rm /var/lib/rancher/k3s/server/manifests/*' --become"
 
-  playbook:ubuntu-prepare:
-    desc: Prepare all the k8s nodes for running k3s
-    cmds:
-    - "ansible-playbook -i {{.ANSIBLE_INVENTORY_DIR}}/home-cluster/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/ubuntu/prepare.yml"
+  # playbook:ubuntu-prepare:
+  #   desc: Prepare all the k8s nodes for running k3s
+  #   dir: "{{.ANSIBLE_DIR}}"
+  #   cmds:
+  #   - "ansible-playbook -i {{.ANSIBLE_INVENTORY_DIR}}/home-cluster/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/ubuntu/prepare.yml"
 
-  playbook:ubuntu-upgrade:
-    desc: Upgrade all the k8s nodes operating system
-    cmds:
-    - "ansible-playbook -i {{.ANSIBLE_INVENTORY_DIR}}/home-cluster/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/ubuntu/upgrade.yml"
+  # playbook:ubuntu-upgrade:
+  #   desc: Upgrade all the k8s nodes operating system
+  #   dir: "{{.ANSIBLE_DIR}}"
+  #   cmds:
+  #   - "ansible-playbook -i {{.ANSIBLE_INVENTORY_DIR}}/home-cluster/hosts.yml {{.ANSIBLE_PLAYBOOK_DIR}}/ubuntu/upgrade.yml"
 
   # playbook:ubuntu-reboot:
   #   desc: Reboot all the k8s nodes

@@ -25,23 +25,21 @@ env:
   SSH_AUTHORIZED_KEY: ~/.ssh/id_rsa.pub
   SSH_HOST_KEY:
     sh: echo "~/.ssh/${HOST}-id_rsa.pub"
-  WORKSPACE_PATH: "{{.ROOT_DIR}}/.workspaces/{{.WORKSPACE}}"
-  WORKSPACE_CONFIG: "{{.CONFIG_PATH}}/workspace.vendir.{{.WORKSPACE}}.yml"
+
 # env:
 #   AUTHOR_NAME: '{{default "{{.AUTHOR_NAME}}" "git" }}'
 #   AUTHOR_EMAIL: '{{default "{{.AUTHOR_EMAIL}}" "git@nowhere" }}'
-
 
 dotenv:
   - '.SECRET'
 
 includes:
+  variables:
+    taskfile: ./Taskfile.vars.yml
+    optional: true
   ansible:
     taskfile: ./tasks/Taskfile.ansible.yml
     optional: true
-  # aqua:
-  #   taskfile: ./tasks/Taskfile.aqua.yml
-  #   optional: true
   argocd:
     taskfile: ./tasks/Taskfile.argocd.yml
     optional: true
@@ -60,9 +58,6 @@ includes:
   dynamodb:
     taskfile: ./tasks/Taskfile.dynamodb.yml
     optional: true
-  # extras:
-  #   taskfile: ./tasks/Taskfile.extras.yml
-  #   optional: true
   gitlab:
     taskfile: ./tasks/Taskfile.gitlab.yml
     optional: true
@@ -72,18 +67,6 @@ includes:
   hugo:
     taskfile: ./tasks/Taskfile.hugo.yml
     optional: true
-  # install:
-  #   taskfile: ./tasks/Taskfile.install.yml
-  #   optional: true
-  # kube:
-  #   taskfile: ./tasks/Taskfile.kube.yml
-  #   optional: true
-  # llm:
-  #   taskfile: ./tasks/Taskfile.llm.yml
-  #   optional: true
-  # openapi:
-  #   taskfile: ./tasks/Taskfile.openapi.yml
-  #   optional: true
   pi:
     taskfile: ./tasks/Taskfile.pi.yml
     optional: true
@@ -93,9 +76,6 @@ includes:
   steampipe:
     taskfile: ./tasks/Taskfile.steampipe.yml
     optional: true
-  # template:
-  #   taskfile: ./tasks/Taskfile.template.yml
-  #   optional: true
   terraform:
     taskfile: ./tasks/Taskfile.terraform.yml
     optional: true

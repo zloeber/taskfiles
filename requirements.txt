@@ -1,4 +1,3 @@
-python-gitlab
 diagrams
 boto3
 hvac
@@ -7,8 +6,3 @@ prettytable
 ansible
 mdtoc
 pyyaml
-slack-bolt
-slack_sdk
-requests
-gitpython
-mk

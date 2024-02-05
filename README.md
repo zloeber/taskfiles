@@ -16,6 +16,12 @@ This is a library of [taskfile.dev](https://taskfile.dev) definitions for things
 
 This uses [asdf-vm](https://asdf-vm.com/) to manage binaries used by this application. You can install it and other requirements via `./.configure.sh`.
 
+Additional Python specific tools get dropped in a local binary path called `.local`.
+
+## Variables
+
+You can overwrite most variables by including a `Taskfile.vars.yml` file with the variables you wish to overwrite.
+
 ## Notes
 
 ### Docker Image
@@ -27,12 +33,11 @@ task docker:build docker:shell
 ```
 
 Then when you are in the running container start up zsh for a better shell experience
+
 ```bash
 /bin/zsh
 ```
 
-### Applications
+## Development
 
-I tend to lean on other, purpose built, application managers for installing higher level dependencies like python, golang, or nodejs. This can be done via asdf specifically if you are up for setting that up in your shell. Adding a .tool-versions file with your applications and their version works swimmingly most of the time. 
-
-Another option for many applications would be aqua. Tasks have been included to install aqua and sync up application versions within a definition file in your repo easily enough. Otherwise, the local binary installs tend to get dropped in a local binary path. The default for this project is `.local` but you can update this to suit your needs in the root Taskfile.yml
+Fork this repo, make updates, send a PR for approval. If you update this readme ensure to run `task toc` to update the table of contents.

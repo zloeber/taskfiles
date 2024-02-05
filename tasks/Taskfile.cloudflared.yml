@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+silent: true
+vars:
+  cloudflared: "{{.LOCAL_BIN_PATH}}/cloudflared"
+  cloudflared_version: "1.5.6"
+
+tasks:
+  show:
+    desc: Show task variables
+    cmds:
+      - |
+        echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
+        echo "cloudflared: {{.cloudflared}}"
+        echo "cloudflared_version: {{.cloudflared_version}}"
+
+  install:
+    desc: Install cloudflared
+    cmds:
+      - |
+        mkdir -p {{.LOCAL_BIN_PATH}}
+        os=${OS:-"linux"}
+        arch=${ARCH:-"amd64"}
+
+        wget https://github.com/cloudflare/cloudflared/releases/download/2023.6.1/cloudflared-${os}-${arch} -O {{.cloudflared}}
+        chmod +x {{.cloudflared}}
+    status:
+      - test -f {{.cloudflared}}
+
+  token:validate:
+    desc: Validate your CF token
+    cmds:
+      - |
+        curl -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+        -H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}" \
+        -H "Content-Type:application/json"

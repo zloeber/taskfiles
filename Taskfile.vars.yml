@@ -1,0 +1,5 @@
+version: '3'
+silent: true
+vars:
+  ANSIBLE_DIR: "{{.ROOT_DIR}}/ansible"
+  PYTHON_VENV_PATH: "{{.ROOT_DIR}}/venv"
