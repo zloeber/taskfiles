@@ -1,10 +1,10 @@
 <!---toc start-->
 
-* [Taskfiles Collection](#taskfiles-collection)
-* [Configuration](#configuration)
-  * [Notes](#notes)
-    * [Docker Image](#docker-image)
-    * [Applications](#applications)
+- [Taskfiles Collection](#taskfiles-collection)
+- [Configuration](#configuration)
+  - [Notes](#notes)
+    - [Docker Image](#docker-image)
+    - [Applications](#applications)
 
 <!---toc end-->
 
@@ -14,7 +14,7 @@ This is a library of [taskfile.dev](https://taskfile.dev) definitions for things
 
 # Configuration
 
-This uses [asdf-vm](https://asdf-vm.com/) to manage binaries used by this application. You can install it and other requirements via `./.configure.sh`.
+You can install [mise](https://mise.jdx.dev) and other requirements via `./.configure.sh`.
 
 Additional Python specific tools get dropped in a local binary path called `.local`.
 

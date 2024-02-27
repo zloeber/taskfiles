@@ -1,18 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# install task binary to local path
-if [ ! -f ~/.asdf/asdf.sh ]; then
-    git clone https://github.com/asdf-vm/asdf.git ~/.asdf
+# install mise if not already installed to local path
+if [ ! -f ~/.local/bin/mise ]; then
+    curl https://mise.run | sh
 fi
 
-. ~/.asdf/asdf.sh
+eval "$(~/.local/bin/mise activate zsh)"
 
-cat .tool-versions | awk '{print $1;}' | xargs -I % sh -c 'asdf plugin add %'
+mise install
+#cat .tool-versions | awk '{print $1;}' | xargs -I % sh -c 'asdf plugin add %'
 
-asdf install
+#asdf install
 
-task python:venv python:install secrets
+task python:venv python:install
 
 echo ""
-echo "Load asdf into your path (add to your ~/.zshrc profile to always be available): "
-echo "   source ~/.asdf/asdf.sh"
+echo "Load mise into your path (add to your ~/.zshrc profile to always be available): "
+echo '   echo 'eval "$(~/.local/bin/mise activate zsh)"' >> ~/.zshrc'

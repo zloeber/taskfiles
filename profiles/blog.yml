@@ -21,3 +21,13 @@ repos:
     url: git@github.com:zloeber/azure-pipeline-library.git
     branches:
       - master
+  - name: github-profile
+    project: zloeber/zloeber
+    url: git@github.com:zloeber/zloeber.git
+    branches:
+      - main
+  - name: github-resume
+    project: zloeber/resume
+    url: git@github.com:zloeber/resume.git
+    branches:
+      - main
