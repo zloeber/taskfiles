@@ -38,6 +38,12 @@ Then when you are in the running container start up zsh for a better shell exper
 /bin/zsh
 ```
 
+## Usage
+
+To use this in a project you need only copy the `tasks` folder and `Taskfile.yml`/`Taskfile.vars.yml` to your project root. You need only keep files in the `tasks` folder that you plan on using.
+
+> **TIP** Monorepo project? To use the tasks within subfolders simply soft link the Taskfile.yml and tasks folder into it. Then create a per-folder Taskfile.vars.yml file if needed.
+
 ## Development
 
 Fork this repo, make updates, send a PR for approval. If you update this readme ensure to run `task toc` to update the table of contents.

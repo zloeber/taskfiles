@@ -1,0 +1,47 @@
+function br {
+    f=$(mktemp)
+    (
+        set +e
+        broot --outcmd "$f" "$@"
+        code=$?
+        if [ "$code" != 0 ]; then
+            rm -f "$f"
+            exit "$code"
+        fi
+    )
+    code=$?
+    if [ "$code" != 0 ]; then
+        return "$code"
+    fi
+    d=$(<"$f")
+    rm -f "$f"
+    eval "$d"
+}
+
+add-to-path() {
+    newelement=${1%/}
+    if [ -d "$1" ] && ! echo $PATH | grep -E -q "(^|:)$newelement($|:)" ; then
+        if [ "$2" = "after" ] ; then
+            PATH="$PATH:$newelement"
+        else
+            PATH="$newelement:$PATH"
+        fi
+    fi
+}
+
+rm-from-path() {
+    PATH="$(echo $PATH | sed -e "s;\(^\|:\)${1%/}\(:\|\$\);\1\2;g" -e 's;^:\|:$;;g' -e 's;::;:;g')"
+}
+
+## Alias to githubapp for installing/updating applications from github, nifty.
+if [[ -d ${HOME}/.local/app/ghr-installer ]]; then
+    alias githubapp="make --no-print-directory -C ${HOME}/.local/app/ghr-installer"
+fi
+
+## Console copy/paste to clipboard
+alias ctrlc='xclip -selection c'
+alias ctrlv='xclip -selection c -o'
+
+export SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt
+
+eval "$(~/.local/bin/mise activate zsh)"
