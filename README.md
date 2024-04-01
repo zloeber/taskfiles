@@ -44,6 +44,12 @@ To use this in a project you need only copy the `tasks` folder and `Taskfile.yml
 
 > **TIP** Monorepo project? To use the tasks within subfolders simply soft link the Taskfile.yml and tasks folder into it. Then create a per-folder Taskfile.vars.yml file if needed.
 
+You can use vendir to sync versions of this repo into your own if you like. Add `.tasks` to your `.gitignore` file and create a vendir.yml file with contents like the following:
+
+```yaml
+
+```
+
 ## Development
 
 Fork this repo, make updates, send a PR for approval. If you update this readme ensure to run `task toc` to update the table of contents.

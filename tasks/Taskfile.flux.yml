@@ -1,0 +1,114 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  CURRENT_NAMESPACE:
+    sh: "kubectl config get-contexts | grep '^*' | awk '{print $5}'"
+  SOURCE_GIT_REPO: home-kubernetes
+  SOPS_AGE_KEY_FILE:
+    sh: echo "${SOPS_AGE_KEY_FILE}"
+
+tasks:
+  show:
+    desc: Show flux variables
+    cmds:
+      - |
+        echo "SOURCE_GIT_REPO: {{.SOURCE_GIT_REPO}}"
+        echo "SOPS_AGE_KEY_FILE: {{.SOPS_AGE_KEY_FILE}}"
+
+  verify:
+    desc: Verify flux meets the prerequisites
+    cmds:
+      - flux check --pre
+
+  sync:
+    desc: Sync flux-system with the Git Repository
+    cmds:
+      - flux -n flux-system --kubeconfig ./kubeconfig reconcile source git {{.SOURCE_GIT_REPO}}
+      - flux -n flux-system --kubeconfig ./kubeconfig reconcile kustomization cluster
+      - flux -n flux-system --kubeconfig ./kubeconfig reconcile kustomization cluster-apps
+
+  suspend:
+    cmds:
+      - flux -n flux-system suspend source git {{.SOURCE_GIT_REPO}}
+      - flux -n flux-system suspend kustomization crds
+      - flux -n flux-system suspend kustomization core
+      - flux -n flux-system suspend kustomization apps
+
+  resume:
+    cmds:
+      - flux -n flux-system resume source git {{.SOURCE_GIT_REPO}}
+      - flux -n flux-system resume kustomization crds
+      - flux -n flux-system resume kustomization core
+      - flux -n flux-system resume kustomization apps
+
+  ns:
+    desc: Run flux in the current namespace
+    cmds:
+      - flux -n {{.CURRENT_NAMESPACE}} {{.CLI_ARGS | default "get all"}}
+
+  diff:
+    ignore_error: true
+    cmds:
+      - flux diff kustomization flux-system --path {{.PROJECT_DIR}}/cluster/base
+      - flux diff kustomization crds --path {{.CLUSTER_DIR}}/crds
+      - flux diff kustomization core --path {{.CLUSTER_DIR}}/core
+      - flux diff kustomization apps --path {{.CLUSTER_DIR}}/apps
+
+  install:verify:
+    desc: Verify flux meets the prerequisites
+    cmds:
+      - flux check --pre
+
+  install:namespace:
+    desc: Create the flux-system namespace
+    cmds:
+      - kubectl create namespace flux-system --dry-run=client -o yaml | kubectl apply -f -
+
+  install:secret:
+    desc: Create the Age secret in the flux-system namespace
+    cmds:
+      - cat {{.SOPS_AGE_KEY_FILE}} | kubectl -n flux-system create secret generic sops-age --from-file=age.agekey=/dev/stdin
+    preconditions:
+      - sh: test -f {{.SOPS_AGE_KEY_FILE}}
+        msg: |
+          Age key file is not found. Did you forget to create it?
+    vars:
+      SOPS_AGE_KEY_FILE: ~/.config/sops/age/keys.txt
+
+  install:install:
+    desc: Install Flux into your cluster, run this again if it fails
+    cmds:
+      - kubectl apply -k {{.CLUSTER_DIR}}/base/flux-system
+
+  reconcile:
+    desc: Force update Flux to pull in changes from your Git repository
+    cmds:
+      - flux reconcile source git flux-system {{.CLI_ARGS | default "-n flux-system"}}
+
+  create-secret:
+    cmds:
+      - kubectl create secret generic testing --dry-run=client --from-literal=test=value -oyaml > temp-testing.yaml
+      - sed -i 's/data/stringData/g' temp-testing.yaml
+      - sops -e temp-testing.yaml > testing.sops.yaml
+      - rm temp-testing.yaml
+    preconditions:
+      - sh: test ! -f testing.sops.yaml
+        msg: |
+          'testing.sops.yaml' already exists and would be overridden. Failing out of abundance of caution.
+
+  install:
+    desc: Install Flux into your cluster
+    cmds:
+      - kubectl apply --kustomize {{.KUBERNETES_DIR}}/bootstrap
+      - cat {{.SOPS_AGE_KEY_FILE}} | kubectl -n flux-system create secret generic sops-age --from-file=age.agekey=/dev/stdin || echo "unable to create age secret"
+      - sops --decrypt {{.KUBERNETES_DIR}}/flux/vars/cluster-secrets.sops.yaml | kubectl apply --overwrite=true --force=true -f -
+      - kubectl apply -f {{.KUBERNETES_DIR}}/flux/vars/cluster-settings.yaml
+      - kubectl apply --kustomize {{.KUBERNETES_DIR}}/flux/config
+    preconditions:
+      - sh: test -f {{.SOPS_AGE_KEY_FILE}}
+        msg: |
+          Age key file is not found. Did you forget to create it?
+    requires:
+      vars:
+        - SOPS_AGE_KEY_FILE #: ~/.config/sops/age/keys.txt

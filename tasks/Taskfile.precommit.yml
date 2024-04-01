@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+tasks:
+  init:
+    desc: Initialize pre-commit hooks
+    cmds:
+      - source {{.python_venv_path}}/bin/activate
+      - pre-commit install --install-hooks
+
+  run:
+    desc: Run pre-commit
+    cmds:
+      - source {{.python_venv_path}}/bin/activate
+      - pre-commit run --all-files
+
+  update:
+    desc: Update pre-commit hooks
+    cmds:
+      - source {{.python_venv_path}}/bin/activate
+      - pre-commit autoupdate

@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 silent: true
 env:
   TARGET:
@@ -31,7 +31,7 @@ env:
 #   AUTHOR_EMAIL: '{{default "{{.AUTHOR_EMAIL}}" "git@nowhere" }}'
 
 dotenv:
-  - '.SECRET'
+  - ".SECRET"
 
 includes:
   variables:
@@ -49,14 +49,29 @@ includes:
   aws:
     taskfile: ./tasks/Taskfile.aws.yml
     optional: true
+  cdk:
+    taskfile: ./tasks/Taskfile.cdk.yml
+    optional: true
   chatgpt:
     taskfile: ./tasks/Taskfile.chatgpt.yml
+    optional: true
+  cloudflared:
+    taskfile: ./tasks/Taskfile.cloudflared.yml
     optional: true
   docker:
     taskfile: ./tasks/Taskfile.docker.yml
     optional: true
+  dotnet:
+    taskfile: ./tasks/Taskfile.dotnet.yml
+    optional: true
   dynamodb:
     taskfile: ./tasks/Taskfile.dynamodb.yml
+    optional: true
+  flux:
+    taskfile: ./tasks/Taskfile.flux.yml
+    optional: true
+  format:
+    taskfile: ./tasks/Taskfile.format.yml
     optional: true
   gitlab:
     taskfile: ./tasks/Taskfile.gitlab.yml
@@ -64,14 +79,32 @@ includes:
   git:
     taskfile: ./tasks/Taskfile.git.yml
     optional: true
+  go:
+    taskfile: ./tasks/Taskfile.go.yml
+    optional: true
   hugo:
     taskfile: ./tasks/Taskfile.hugo.yml
+    optional: true
+  kube:
+    taskfile: ./tasks/Taskfile.kube.yml
+    optional: true
+  lint:
+    taskfile: ./tasks/Taskfile.lint.yml
+    optional: true
+  openapi:
+    taskfile: ./tasks/Taskfile.openapi.yml
     optional: true
   pi:
     taskfile: ./tasks/Taskfile.pi.yml
     optional: true
+  precommit:
+    taskfile: ./tasks/Taskfile.precommit.yml
+    optional: true
   python:
     taskfile: ./tasks/Taskfile.python.yml
+    optional: true
+  sops:
+    taskfile: ./tasks/Taskfile.sops.yml
     optional: true
   steampipe:
     taskfile: ./tasks/Taskfile.steampipe.yml
@@ -89,45 +122,44 @@ includes:
     taskfile: ./tasks/Taskfile.workstation.yml
     optional: true
 
-
 tasks:
   default:
     cmds:
-    - |
-      task -l
+      - |
+        task -l
 
   show:
     desc: Show task variables
     cmds:
-    - |
-      echo "ROOT_PATH: {{.ROOT_DIR}}"
-      echo "PROFILE: {{.PROFILE}}"
-      echo "PROJECT: {{.PROJECT}}"
-      echo "VERSION: {{.VERSION}}"
-      echo "OS: {{OS}}"
-      echo "ARCH: {{ARCH}}"
-      echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
-      echo "DOCS_PATH: {{.DOCS_PATH}}"
-      echo "PYTHON_VENV_PATH: {{.PYTHON_VENV_PATH}}"
-      echo "SCRIPT_PATH: {{.SCRIPT_PATH}}"
-      echo "BUILD_DATE: {{.BUILD_DATE}}"
-      echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
-      echo "TASKFILE_BASE: tasks"
+      - |
+        echo "ROOT_PATH: {{.ROOT_DIR}}"
+        echo "PROFILE: {{.PROFILE}}"
+        echo "PROJECT: {{.PROJECT}}"
+        echo "VERSION: {{.VERSION}}"
+        echo "OS: {{OS}}"
+        echo "ARCH: {{ARCH}}"
+        echo "LOCAL_BIN_PATH: {{.LOCAL_BIN_PATH}}"
+        echo "DOCS_PATH: {{.DOCS_PATH}}"
+        echo "PYTHON_VENV_PATH: {{.PYTHON_VENV_PATH}}"
+        echo "SCRIPT_PATH: {{.SCRIPT_PATH}}"
+        echo "BUILD_DATE: {{.BUILD_DATE}}"
+        echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
+        echo "TASKFILE_BASE: tasks"
 
   show:all:
     desc: Show all variables for task namespaces
     cmds:
-    - |
-      echo "## Show ##";
-      task show
-      echo ""
-      for taskitem in $(task -l | cut -d " " -f2 | grep show | sed 's/.$//'); do
-        if [[ "$taskitem" != "show:all" ]]; then
-          echo "## Show - ${taskitem} ##";
-          task $taskitem;
-          echo "";
-        fi
-      done
+      - |
+        echo "## Show ##";
+        task show
+        echo ""
+        for taskitem in $(task -l | cut -d " " -f2 | grep show | sed 's/.$//'); do
+          if [[ "$taskitem" != "show:all" ]]; then
+            echo "## Show - ${taskitem} ##";
+            task $taskitem;
+            echo "";
+          fi
+        done
 
   list:
     desc: List tasks by namespace (task list -- <namespace>)
@@ -149,14 +181,14 @@ tasks:
   #       -target CurrentUserHomeDirectory
   #     ln -s $HOME/aws-cli/aws ./venv/bin/aws
   #     ln -s $HOME/aws-cli/aws_completer ./venv/bin/aws_completer
-  
+
   toc:
     desc: Update the table of contents in README.md
     cmds:
-    - |
-      source {{.LOCAL_BIN_PATH}}/activate
-      mdtoc README.md
-  
+      - |
+        source {{.LOCAL_BIN_PATH}}/activate
+        mdtoc README.md
+
   secrets:
     desc: Create template .SECRETS file if one does not already exist.
     cmds:

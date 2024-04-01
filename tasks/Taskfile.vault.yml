@@ -32,3 +32,19 @@ tasks:
         echo "Vault binary installed: {{.local_bin_path}}/${_vendorapp}"
     status:
       - test -f {{.local_bin_path}}/vault
+
+  hsm:softhsm:init:
+    desc: Initialize the local softHSM for vault
+    vars:
+      TARGET_PATH: "~/.config/sops/age"
+      TARGET_FILE: "{{.TARGET_PATH}}/keys.txt"
+      TEMP_FILE:
+        sh: mktemp -u
+    cmds:
+      - |
+        echo "Initializing SoftHSM to be able to create a working example (only for dev),"
+        echo "sharing the HSM device is emulated with a pre-created keypair in the image."
+        #brew install softhsm
+        echo "HSM_PIN: ${HSM_PIN}"
+        softhsm2-util --init-token --free --label bank-vaults --so-pin banzai --pin banzai
+        #pkcs11-tool --module /usr/local/lib/softhsm/libsofthsm2.so --keypairgen --key-type rsa:2048 --pin "${HSM_PIN}" --token-label bank-vaults --label bank-vaults
