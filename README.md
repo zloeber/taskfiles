@@ -62,7 +62,7 @@ directories:
           - Taskfile.vars.yml
 ```
 
-Then run:
+Then at the root of your project run:
 
 ```bash
 vendir sync
@@ -70,9 +70,9 @@ ln -s ./.tasks/tasks ./
 ln -s ./.tasks/Taskfile.yml ./
 ```
 
-Finally, add `.tasks` to your `./.gitignore`
+Finish off by adding `.tasks` to your `./.gitignore`
 
-You can keep any custom tasks in `./Taskfile.custom.yml`.
+> **NOTE** You can keep any custom tasks in `./Taskfile.custom.yml` but you cannot use dotenv sourcing within them. Use `.mise.toml` to do this instead!
 
 ## Development
 

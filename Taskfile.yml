@@ -58,6 +58,9 @@ includes:
   chatgpt:
     taskfile: ./tasks/Taskfile.chatgpt.yml
     optional: true
+  cluster:
+    taskfile: ./tasks/Taskfile.cluster.yml
+    optional: true
   cloudflared:
     taskfile: ./tasks/Taskfile.cloudflared.yml
     optional: true
