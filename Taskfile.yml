@@ -37,6 +37,9 @@ includes:
   variables:
     taskfile: ./Taskfile.vars.yml
     optional: true
+  custom:
+    taskfile: ./Taskfile.custom.yml
+    optional: true
   ansible:
     taskfile: ./tasks/Taskfile.ansible.yml
     optional: true

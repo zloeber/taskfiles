@@ -44,11 +44,35 @@ To use this in a project you need only copy the `tasks` folder and `Taskfile.yml
 
 > **TIP** Monorepo project? To use the tasks within subfolders simply soft link the Taskfile.yml and tasks folder into it. Then create a per-folder Taskfile.vars.yml file if needed.
 
-You can use vendir to sync versions of this repo into your own if you like. Add `.tasks` to your `.gitignore` file and create a vendir.yml file with contents like the following:
+You can use vendir to sync versions of this repo into your own if you like. Create a vendir.yml file with contents like the following:
 
 ```yaml
-
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: ./.tasks
+    contents:
+      - path: ./
+        git:
+          url: https://github.com/zloeber/taskfiles.git
+          ref: main
+        includePaths:
+          - tasks/**/*
+          - Taskfile.yml
+          - Taskfile.vars.yml
 ```
+
+Then run:
+
+```bash
+vendir sync
+ln -s ./.tasks/tasks ./
+ln -s ./.tasks/Taskfile.yml ./
+```
+
+Finally, add `.tasks` to your `./.gitignore`
+
+You can keep any custom tasks in `./Taskfile.custom.yml`.
 
 ## Development
 
