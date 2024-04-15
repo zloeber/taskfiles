@@ -2,54 +2,56 @@ FROM python:3.12.1-bookworm
 USER root:root
 
 ENV LANG=en_US.UTF-8 \
-    LANGUAGE=en_US:en \
-    PIP_NO_INPUT=1
-
-#WORKDIR /home/appuser
-COPY ./ ./
+  LANGUAGE=en_US:en \
+  PIP_NO_INPUT=1
 
 RUN \
   set -e \
   && apt-get update && apt-get install -y \
   && apt-get --no-install-recommends install -y \
-    ca-certificates \
-    unzip \
-    zip \
-    jq \
-    sed \
-    diffutils \
-    coreutils \
-    bash \
-    git \
-    gnupg \
-    curl \
-    libc6 \
-    make \
-    libglib2.0-0 \
-    openssh-client \
-    openssl \
-    tar \
-    postgresql \
-    graphviz \
-    zsh \
-    wget \
-  && rm -rf /var/lib/apt/lists/* \
-#  && curl -o /usr/local/share/ca-certificates/some_additional_cert_to_trust.crt http://crl.domain.local/pki/some_additional_cert_to_trust.crt \
-  && update-ca-certificates \
-  && curl -o /tmp/powershell.deb https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb \
-  && dpkg -i /tmp/powershell.deb \
-  && apt-get update \
-  && apt-get install --no-install-recommends -y powershell \
-  && rm -rf /var/lib/apt/lists/* \
-  && pwsh -Command Install-Module powershell-yaml -Force \
-  && rm -rf /tmp/*
+  ca-certificates \
+  unzip \
+  zip \
+  jq \
+  sed \
+  diffutils \
+  coreutils \
+  bash \
+  git \
+  gnupg \
+  curl \
+  libc6 \
+  make \
+  libglib2.0-0 \
+  openssh-client \
+  openssl \
+  tar \
+  postgresql \
+  graphviz \
+  zsh \
+  wget \
+  sudo \
+  && rm -rf /var/lib/apt/lists/*
 
-#USER appuser
+ARG USERNAME=appuser
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
 
-RUN ./configure.sh \
-    && echo "source ~/.asdf/asdf.sh" >> ./.bashrc
+# Create the user
+RUN groupadd --gid $USER_GID $USERNAME \
+  && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -s '/bin/zsh' \
+  && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+  && chmod 0440 /etc/sudoers.d/$USERNAME
 
-COPY ./config/.zshrc ./root
-COPY ./config/.p10k.zsh ./root
+USER $USERNAME
+WORKDIR /home/appuser
+COPY --chown=appuser:appuser ./ ./
+
+RUN ./configure.sh
+
+COPY --chown=appuser:appuser ./config/.zshrc /home/appuser
+COPY --chown=appuser:appuser ./config/.zshrc.local /home/appuser
+COPY --chown=appuser:appuser ./config/.zprofile /home/appuser
+COPY --chown=appuser:appuser ./config/.p10k.zsh /home/appuser
 
 SHELL [ "/bin/zsh" ]

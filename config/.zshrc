@@ -23,12 +23,10 @@ if ! zgen saved; then
     zgen oh-my-zsh plugins/sudo
     zgen oh-my-zsh plugins/docker
     zgen oh-my-zsh plugins/terraform
-    zgen oh-my-zsh plugins/aws
+    #zgen oh-my-zsh plugins/aws
     zgen oh-my-zsh plugins/fzf
-    zgen oh-my-zsh plugins/vault
-    
-    ## These two like to fork up my path for whatever reason (jerks)
-    zgen oh-my-zsh plugins/asdf
+    #zgen oh-my-zsh plugins/vault    
+    #zgen oh-my-zsh plugins/asdf
     #zgen oh-my-zsh plugins/direnv
     
     zgen oh-my-zsh plugins/command-not-found
@@ -75,25 +73,25 @@ fi
 
 ## Path customizations
 BIN_PATH=$HOME/.local/bin
-ASDF_BIN_PATH=$HOME/.asdf/bin
+#ASDF_BIN_PATH=$HOME/.asdf/bin
 
-if [ -f $BIN_PATH/direnv ]; then
-  eval "$($BIN_PATH/direnv hook zsh)"
-fi
+#if [ -f $BIN_PATH/direnv ]; then
+#  eval "$($BIN_PATH/direnv hook zsh)"
+#fi
 
-if ls ${ASDF_BIN_PATH}/asdf &>/dev/null; then
- . $HOME/.asdf/asdf.sh
- fpath=(${ASDF_BIN_PATH}/completions $fpath)
-fi
+#if ls ${ASDF_BIN_PATH}/asdf &>/dev/null; then
+# . $HOME/.asdf/asdf.sh
+# fpath=(${ASDF_BIN_PATH}/completions $fpath)
+#fi
 
-autoload -Uz compinit
-compinit
+#autoload -Uz compinit
+#compinit
 
-#autoload -U +X bashcompinit && bashcompinit
+autoload -U +X bashcompinit && bashcompinit
 
-#test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-export PATH="/usr/local/sbin:$PATH"
+#export PATH="/usr/local/sbin:$PATH"
+export PATH="${HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # To customize prompt, run `p10k configure` or edit /tmp/vscode-zsh/.p10k.zsh.
 [[ ! -f ${HOME}/.p10k.zsh ]] || source ${HOME}/.p10k.zsh

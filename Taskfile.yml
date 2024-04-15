@@ -25,13 +25,14 @@ env:
   SSH_AUTHORIZED_KEY: ~/.ssh/id_rsa.pub
   SSH_HOST_KEY:
     sh: echo "~/.ssh/${HOST}-id_rsa.pub"
+  AGE_CONFIG_PATH: "~/.config/sops/age"
 
 # env:
 #   AUTHOR_NAME: '{{default "{{.AUTHOR_NAME}}" "git" }}'
 #   AUTHOR_EMAIL: '{{default "{{.AUTHOR_EMAIL}}" "git@nowhere" }}'
 
 dotenv:
-  - ".SECRET"
+  - ".SECRETS.env"
 
 includes:
   variables:
@@ -45,9 +46,6 @@ includes:
     optional: true
   argocd:
     taskfile: ./tasks/Taskfile.argocd.yml
-    optional: true
-  asdf:
-    taskfile: ./tasks/Taskfile.asdf.yml
     optional: true
   aws:
     taskfile: ./tasks/Taskfile.aws.yml
@@ -115,6 +113,9 @@ includes:
   steampipe:
     taskfile: ./tasks/Taskfile.steampipe.yml
     optional: true
+  system:
+    taskfile: ./tasks/Taskfile.system.yml
+    optional: true
   terraform:
     taskfile: ./tasks/Taskfile.terraform.yml
     optional: true
@@ -177,17 +178,6 @@ tasks:
           task -l
         fi
 
-  # aws:cli2:osx:
-  #   desc: Install osx aws cli v2
-  #   silent: true
-  #   cmds:
-  #   - |
-  #     curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "./venv/AWSCLIV2.pkg"
-  #     installer -pkg ./venv/AWSCLIV2.pkg \
-  #       -target CurrentUserHomeDirectory
-  #     ln -s $HOME/aws-cli/aws ./venv/bin/aws
-  #     ln -s $HOME/aws-cli/aws_completer ./venv/bin/aws_completer
-
   toc:
     desc: Update the table of contents in README.md
     cmds:
@@ -198,9 +188,9 @@ tasks:
   secrets:
     desc: Create template .SECRETS file if one does not already exist.
     cmds:
-      - copy ./config/.SECRETS.env ./.SECRETS
+      - copy ./config/.SECRETS.example.env ./.SECRETS.env
     status:
-      - "test -f .SECRETS"
+      - "test -f .SECRETS.env"
 
   autocomplete:
     desc: Setup task autocomplete

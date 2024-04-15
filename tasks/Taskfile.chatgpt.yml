@@ -3,7 +3,7 @@ version: "3"
 silent: true
 vars:
   aiac_path: "{{.LOCAL_BIN_PATH}}/aiac"
-  OPENAI_API_KEY: 
+  OPENAI_API_KEY:
     sh: 'echo ${OPENAI_API_KEY:-""}'
 
 tasks:
@@ -26,33 +26,3 @@ tasks:
       - cp aiac {{.aiac_path}}
     status:
       - test -f {{.aiac_path}}
-
-  uninstall:
-    desc: Uninstall aiac
-    cmds:
-      - |
-        rm -rf "{{.aiac_path}}"
-
-  # init:
-  #   desc: Install aiac defined plugins
-  #   silent: true
-  #   deps: [install]
-  #   cmds:
-  #     - |
-  #       tool_versions=${TOOL_VERSIONS:-"$(pwd)/.tool-versions"}
-  #       if ! test -e "${tool_versions}"; then
-  #         tool_versions="{{.ROOT_DIR}}/.tool-versions"
-  #       fi
-  #       echo "tool_versions: ${tool_versions}"
-  #       if test -e "${tool_versions}"; then
-  #         source {{.aiac_path}}/aiac.sh
-  #         $(cut -d' ' -f1 {{.ROOT_DIR}}/.tool-versions|xargs -i aiac plugin add  {}) || true
-  #         aiac install
-  #       else
-  #         echo "tool_versions does not exist: ${tool_versions}"
-  #       fi
-
-  # bootstrap:
-  #   desc: Install aiac, install found plugins to defined version.
-  #   silent: true
-  #   deps: [install, init, update]

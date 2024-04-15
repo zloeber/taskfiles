@@ -1,0 +1,13 @@
+(?d)**/__Pycache__
+(?d)*.pyc
+(?d)**/logs/
+(?d)*/*.log
+(?d)**/*/log.*
+(?d).vagrant
+(?d)**/tmp/
+(?d)**/temp/
+(?d).DS_Store
+(?d)**/.terraform/
+(?d).local/share/Trash
+(?d).local/share/
+

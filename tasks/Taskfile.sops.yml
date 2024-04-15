@@ -1,32 +1,45 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
+
 version: "3"
+vars:
+  AGE_CONFIG_PATH: '{{ .AGE_CONFIG_PATH | default "~/.config/sops/age" }}'
 
 tasks:
+  show:
+    desc: Show variables for this task
+    cmds:
+      - |
+        echo "AGE_CONFIG_PATH: {{.AGE_CONFIG_PATH}}"
+        echo "SOPS_AGE_KEY_FILE: {{.AGE_CONFIG_PATH}}/keys.txt"
+
   init:
     vars:
-      TARGET_PATH: "~/.config/sops/age"
-      TARGET_FILE: "{{.TARGET_PATH}}/keys.txt"
+      TARGET_FILE: "{{.AGE_CONFIG_PATH}}/keys.txt"
       TEMP_FILE:
         sh: mktemp -u
     cmds:
-      - age-keygen -o {{.TEMP_FILE}}
-      - mkdir -p {{.TARGET_PATH}}
-      - mv {{.TEMP_FILE}} {{.TARGET_FILE}}
-      - chmod 400 {{.TARGET_FILE}}
       - |
+        age-keygen -o {{.TEMP_FILE}}
+        mkdir -p {{.AGE_CONFIG_PATH}}
+        mv {{.TEMP_FILE}} {{.TARGET_FILE}}
+        chmod 400 {{.TARGET_FILE}}
         PUBLIC_KEY=$(grep 'public key:' {{.TARGET_FILE}} | awk -F: '{print $(NR)}')
-      - echo "Add 'export SOPS_AGE_KEY_FILE={{.TARGET_FILE}}' to your shell initialization script and reload"
-      - echo "Don't forget to BACK IT UP!"
+        echo "Add 'export SOPS_AGE_KEY_FILE={{.TARGET_FILE}}' to your shell initialization script and reload"
+        echo "Don't forget to BACK IT UP!"
     preconditions:
       - sh: "[ ! -f {{.TARGET_FILE}} ]"
         msg: "Sops key already exists!"
 
   encrypt-file:
-    desc: encrypt sops file 'to use must include -- before path to file.' eg "task sops:encrypt -- file.yml"
+    desc: encrypt sops file.
+    summary: |
+      Example usage: "task sops:encrypt -- file.yml"
     cmds:
       - sops --encrypt --in-place {{.CLI_ARGS}}
 
   decrypt-file:
-    desc: decrypt sops file 'to use must include -- before path to file.'  eg "task sops:decrypt -- file.yml"
+    desc: decrypt sops file.
+    summary: |
+      Example usage: "task sops:decrypt -- file.yml"
     cmds:
       - sops --decrypt --in-place {{.CLI_ARGS}}

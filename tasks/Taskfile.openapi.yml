@@ -2,6 +2,11 @@
 
 version: "3"
 silent: true
+
+vars:
+  venv_path:
+    sh: echo ${PYTHON_VENV_PATH:-"{{.PYTHON_VENV_PATH}}"}
+
 tasks:
   show:
     desc: Show openapi variables
@@ -12,6 +17,14 @@ tasks:
         echo "API_OUTPUT_PATH: {{.API_OUTPUT_PATH}}"
         echo "PYTHON_VENV_PATH: {{.PYTHON_VENV_PATH}}"
 
+  init:
+    desc: Install any dependencies for this task set
+    cmds:
+      - |
+        mise install npm:spectral
+        mise install npm:swagger-cli
+        source {{.venv_path}}/bin/activate
+        pip install fastapi-code-generator
   # generate:api:
   #   desc: Generate API code via openapi-generator-cli docker image
   #   silent: true

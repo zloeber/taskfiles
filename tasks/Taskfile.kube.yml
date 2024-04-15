@@ -92,3 +92,21 @@ tasks:
     silent: true
     cmds:
       - kubectl -n system create job rebalance-`date '+%H%M%d'` --from=cronjob/descheduler
+
+  node:drain:
+    desc: Drain a node for maintenance.
+    summary: |
+      Get the node name via: kubectl get nodes
+      Use: task kube:node:drain -- <node_name>
+    silent: true
+    cmds:
+      - kubectl drain node --ignore-daemonsets --delete-local-data --delete-emptydir-data {{.CLI_ARGS}}
+
+  node:delete:
+    desc: Remove a node from the cluster
+    summary: |
+      Get the node name via: kubectl get nodes
+      Use: task kube:node:delete -- <node_name>
+    silent: true
+    cmds:
+      - kubectl delete node {{.CLI_ARGS}}

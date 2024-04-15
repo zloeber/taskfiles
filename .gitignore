@@ -6,3 +6,5 @@
 .llamafile
 venv
 workspace
+.vault
+.SECRETS.env

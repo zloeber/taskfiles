@@ -5,12 +5,11 @@ silent: true
 vars:
   venv_path:
     sh: echo ${PYTHON_VENV_PATH:-"{{.PYTHON_VENV_PATH}}"}
-  python: "{{.venv_path}}/bin/python"
   pip3: "{{.venv_path}}/bin/pip3"
   linter: "{{.venv_path}}/bin/flake8"
   pandoc: "{{.venv_path}}/bin/pandoc"
   pytest: "{{.venv_path}}/bin/py.test"
-  project: "{{.PROJECT}}"
+  python_project_path: "{{.python_project_path | default .ROOT_DIR }}"
 
 tasks:
   show:
@@ -18,9 +17,7 @@ tasks:
     cmds:
       - |
         echo "venv_path: {{.venv_path}}"
-        echo "PACKAGE_NAME: {{.PACKAGE_NAME}}"
         echo "project: {{.PROJECT}}"
-        echo "python: {{.python}}"
         echo "python_project_path: {{.python_project_path}}"
         echo "pip3: {{.pip3}}"
         echo "linter: {{.linter}}"
@@ -44,7 +41,7 @@ tasks:
     cmds:
       - rm -rf docs/coverage
       - |
-        {{.python}} -m pytest \
+        python -m pytest \
         --cov-report=xml:coverage/tests.xml \
         --cov-report=html:docs/coverage \
         --cov={{.python_project_path}} \
@@ -90,7 +87,7 @@ tasks:
     desc: Create package
     cmds:
       - |
-        {{.python}} setup.py sdist
+        python setup.py sdist
 
   publish:jfrog:
     desc: Publish to artifact repo to jfrog

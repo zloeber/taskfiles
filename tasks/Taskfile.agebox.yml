@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+# Manage repo secrets via agebox
+version: "3"
+silent: true
+vars:
+  CONFIG_PATH:
+    sh: echo "${CONFIG_PATH:-./config}"
+
+env:
+  PERSONAL_VAULT_PATH:
+    sh: echo "${PERSONAL_VAULT_PATH:-"{{.ROOT_DIR}}/.vault"}"
+
+tasks:
+  show:
+    desc: Show variables for workstation tasks
+    cmds:
+      - |
+        echo "ROOT_PATH: {{.ROOT_DIR}}"
+        echo "CONFIG_PATH: {{.CONFIG_PATH}}"
+        echo "ARCH: {{ARCH}}"
+        echo "OS: {{OS}}"
+
+  init:
+    desc: Initialize repo
+    cmds:
+      - |
+        agebox init

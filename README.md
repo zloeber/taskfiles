@@ -16,13 +16,15 @@ This is a library of [taskfile.dev](https://taskfile.dev) definitions for things
 
 You can install [mise](https://mise.jdx.dev) and other requirements via `./.configure.sh`.
 
-Additional Python specific tools get dropped in a local binary path called `.local`.
+## Additional Software
+
+Mise handles a good deal of software you might use in a taskfile. Check if whatever binary you are looking for with `mise install <binary>`. If it is not installed then you can use rust, go, or python packages with mise as well. One example of this is in this project's `.mise.toml` file for [eget](https://github.com/zyedidia/eget) (which is a last ditch method to automatically install binary releases from github). You can use eget to install binaries into your user local bin path like so `eget canop/broot --to ~/.local/bin`
 
 ## Variables
 
-You can overwrite most variables by including a `Taskfile.vars.yml` file with the variables you wish to overwrite.
+You can overwrite most variables by including a `Taskfile.vars.yml` file with the variables you wish to overwrite. Or you can include the variable name assignment prior to calling task in most cases.
 
-## Notes
+# Notes
 
 ### Docker Image
 
@@ -32,7 +34,7 @@ This includes a rudimentary docker image you can use to run most tasks. Simply b
 task docker:build docker:shell
 ```
 
-Then when you are in the running container start up zsh for a better shell experience
+Then when you are in the running container start up zsh for a better shell experience. Then you can run task or any other binaries included in `.mise.toml`
 
 ```bash
 /bin/zsh
@@ -73,6 +75,8 @@ ln -s ./.tasks/Taskfile.yml ./
 Finish off by adding `.tasks` to your `./.gitignore`
 
 > **NOTE** You can keep any custom tasks in `./Taskfile.custom.yml` but you cannot use dotenv sourcing within them. Use `.mise.toml` to do this instead!
+
+##
 
 ## Development
 

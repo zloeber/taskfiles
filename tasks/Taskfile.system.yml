@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+# System management tasks (firewall, services, et cetera)
+version: "3"
+silent: true
+vars:
+  CONFIG_PATH:
+    sh: echo "${CONFIG_PATH:-./config}"
+
+env:
+  PERSONAL_VAULT_PATH:
+    sh: echo "${PERSONAL_VAULT_PATH:-"{{.ROOT_DIR}}/.vault"}"
+
+tasks:
+  show:
+    desc: Show variables for workstation tasks
+    cmds:
+      - |
+        echo "ROOT_PATH: {{.ROOT_DIR}}"
+        echo "CONFIG_PATH: {{.CONFIG_PATH}}"
+        echo "ARCH: {{ARCH}}"
+        echo "OS: {{OS}}"
+
+  reset:firewall:
+    desc: Reset iptables rules
+    cmds:
+      - |
+        sudo iptables -P INPUT ACCEPT
+        sudo iptables -P FORWARD ACCEPT
+        sudo iptables -P OUTPUT ACCEPT
+        sudo iptables -F
+        sudo iptables -X
+        sudo iptables -t nat -F
+        sudo iptables -t nat -X
+        sudo iptables -t mangle -F
+        sudo iptables -t mangle -X
+
+  update:gitignore:
+    desc: Update local .gitignore file idempotently
+    summary: |
+      Usage: task system:update:gitignore -- "add_this_to_gitignore"
+    cmds:
+      - |
+        update_gitignore() {
+          local file_path="$1"
+          local entry="$2"
+
+          # Check if the .gitignore file exists
+          if [ ! -f "$file_path" ]; then
+              echo "Error: .gitignore file not found at $file_path"
+              return 1
+          fi
+
+          # Check if the entry already exists in the .gitignore file
+          if ! grep -qFx "$entry" "$file_path"; then
+              echo "$entry" >> "$file_path"
+              echo "Added '$entry' to .gitignore"
+          else
+              echo "'$entry' already exists in .gitignore"
+          fi
+        }
+
+        update_gitignore "{{.ROOT_DIR}}/.gitignore" {{.CLI_ARGS}}

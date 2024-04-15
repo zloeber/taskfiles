@@ -7,10 +7,7 @@ fi
 
 eval "$(~/.local/bin/mise activate zsh)"
 
-mise install
-#cat .tool-versions | awk '{print $1;}' | xargs -I % sh -c 'asdf plugin add %'
-
-#asdf install
+mise install -y
 
 task python:venv python:install
 

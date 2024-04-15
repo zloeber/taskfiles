@@ -33,14 +33,19 @@ rm-from-path() {
     PATH="$(echo $PATH | sed -e "s;\(^\|:\)${1%/}\(:\|\$\);\1\2;g" -e 's;^:\|:$;;g' -e 's;::;:;g')"
 }
 
-## Alias to githubapp for installing/updating applications from github, nifty.
-if [[ -d ${HOME}/.local/app/ghr-installer ]]; then
-    alias githubapp="make --no-print-directory -C ${HOME}/.local/app/ghr-installer"
-fi
+thisOS=$(uname -s)
 
 ## Console copy/paste to clipboard
-alias ctrlc='xclip -selection c'
-alias ctrlv='xclip -selection c -o'
+case "${thisOS}" in
+    Linux*)
+        alias ctrlc='xclip -selection c'
+        alias ctrlv='xclip -selection c -o'
+        ;;
+    Darwin*)
+        alias ctrlc='pbcopy'
+        alias ctrlv='pbpaste'
+        ;;
+esac
 
 export SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt
 

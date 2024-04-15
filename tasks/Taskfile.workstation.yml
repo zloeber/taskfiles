@@ -1,34 +1,46 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
-
-version: '3'
+## These are all specific to ubuntu distributions, many require sudo
+version: "3"
 silent: true
+vars:
+  CONFIG_PATH: '{{.CONFIG_FILE | default "./config"}}'
+  AGE_CONFIG_PATH: '{{ .AGE_CONFIG_PATH | default "~/.config/sops/age" }}'
+
+env:
+  PERSONAL_VAULT_PATH:
+    sh: echo "${PERSONAL_VAULT_PATH:-"{{.ROOT_DIR}}/.vault"}"
+
 tasks:
   show:
     desc: Show variables for workstation tasks
     cmds:
       - |
         echo "ROOT_PATH: {{.ROOT_DIR}}"
+        echo "PERSONAL_VAULT_PATH: ${PERSONAL_VAULT_PATH}"
         echo "CONFIG_PATH: {{.CONFIG_PATH}}"
         echo "SSH_HOST_KEY: {{.SSH_HOST_KEY}}"
+        echo "AGE_CONFIG_PATH: {{.AGE_CONFIG_PATH}}"
         echo "ARCH: {{ARCH}}"
         echo "OS: {{OS}}"
-  init:ubuntu:
+
+  ubuntu:install:docker:
     desc: Initial software setup for a pi running ubuntu
     cmds:
       - |
         sudo apt update
         sudo apt autoremove
         sudo apt upgrade -y
-        sudo apt install \
-          curl ca-certificates apt-transport-https software-properties-common
+        sudo apt install curl ca-certificates apt-transport-https software-properties-common -y
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
         sudo usermod -aG docker ${USER}
         sudo apt update -y
         sudo apt install docker-ce -y
         sudo systemctl status docker
+    status:
+      - type docker > /dev/null
 
-  install:base:
+  ubuntu:install:base:
     desc: Install base packages via apt (sudo)
     run: once
     cmds:
@@ -41,10 +53,10 @@ tasks:
           libncurses-dev libssl-dev libyaml-dev \
           libxslt-dev libffi-dev libtool unixodbc-dev \
           unzip curl tmux zsh byobu jq rsync git \
-          python3-pip
+          age
         sudo apt-get install -y --reinstall procps
-  
-  install:syncthing:
+
+  ubuntu:install:syncthing:
     desc: Install syncthing as a service for the current user
     run: once
     cmds:
@@ -59,19 +71,12 @@ tasks:
         sudo systemctl status syncthing@$(whoami).service
         sudo ufw allow 22000/tcp
 
-  # # install:docker:
-  # #   desc: install Docker (darwin)
-  # #   run: once
-  # #   cmds:
-  # #     - task: brew:cask
-  # #       vars:
-  # #         CASK: docker
-  # #     - task: exit:notice:restart
-  # #   status:
-  # #     - type docker > /dev/null
-
   require:binary:
+    silent: true
     desc: Ensures that a required binary exists
+    summary: |
+      Usage:
+        task workstation:require:binary -- jq
     cmds:
       - |
         function require() {
@@ -80,19 +85,19 @@ tasks:
 
             for commandname; do
                 if ! command -v -- "${commandname}" > /dev/null 2>&1; then
-                    warn "Required binary check: ${commandname}"
-                    ((not_found++))
+                  echo "Required binary NOT found: ${commandname}"
+                  ((not_found++))
                 else
-                    success "Required binary check: ${commandname}"
+                  echo "Required binary found: ${commandname}"
                 fi
             done
 
             if ((not_found > 0)); then
-                error "Missing requirements: ${not_found}"
+              exit 1
             fi
         }
-
-        require {{.BINARY}}
+        echo "Looking for binary: {{.CLI_ARGS}}"
+        require {{.CLI_ARGS}}
 
   path:add:
     desc: Adds PATH_STRING to your local PATH variable for your user profile
@@ -173,12 +178,13 @@ tasks:
           error "PATH_STRING is required or already in PATH variable!" && exit 1
         fi
 
-  install:keybase:
+  ubuntu:install:keybase:
     desc: Install keybase app
     cmds:
       - |
         curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
         sudo apt install ./keybase_amd64.deb
+        rm ./keybase_amd64.deb
         run_keybase
 
   install:joplin:
@@ -187,3 +193,24 @@ tasks:
     cmds:
       - |
         wget -O - https://raw.githubusercontent.com/laurent22/joplin/dev/Joplin_install_and_update.sh | bash
+
+  backup:keys:
+    desc: Backup ssh configuration and keys to a personal vault for bootstrapping another system.
+    silent: true
+    cmds:
+      - |
+        echo "Starting vault creation to ${PERSONAL_VAULT_PATH}"
+        mkdir -p "${PERSONAL_VAULT_PATH}"
+
+        if [ -d $HOME/.ssh ]; then
+          echo "Backing up: ${HOME}/.ssh"
+          cp -Rf $HOME/.ssh "${PERSONAL_VAULT_PATH}"
+        fi
+        if [ -d {{.AGE_CONFIG_PATH}} ]; then
+          echo "Backing up {{.AGE_CONFIG_PATH}}"
+          cp -Rf {{.AGE_CONFIG_PATH}} ${PERSONAL_VAULT_PATH}
+        fi
+        agebox init 2>/dev/null || true
+        agebox encrypt  -a --dry-run ${PERSONAL_VAULT_PATH}
+    status:
+      - test -d "${PERSONAL_VAULT_PATH}"
