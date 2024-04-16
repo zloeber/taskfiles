@@ -8,18 +8,16 @@ env:
   PROJECT:
     sh: 'echo "$(basename $(pwd))"'
   LOCAL_BIN_PATH:
-    sh: 'echo "{{.ROOT_DIR}}/.local/bin"'
+    sh: 'echo "{{.ROOT_DIR}}/venv/bin"'
   BUILD_DATE:
     sh: "date '+%Y-%m-%d-%H:%M:%S'"
   BUILD_DATE_SHORT:
     sh: "date '+%Y-%m-%d-%H%M%S'"
-  GIT_LATEST_TAG:
-    sh: 'git tag -l | sort -r -V | head -n 1 2>/dev/null || echo "not a git repo"'
-  asdf_path:
-    sh: if [ -d ~/.asdf ]; then echo "~/.asdf"; else echo "{{.ROOT_DIR}}/.asdf"; fi
+  # GIT_LATEST_TAG:
+  #   sh: 'git tag -l 2>/dev/null | sort -r -V | head -n 1 2>/dev/null || echo "not a git repo"'
   TERM: screen-256color
   DOCS_PATH: "{{.ROOT_DIR}}/docs"
-  PYTHON_VENV_PATH: "{{.ROOT_DIR}}/.local"
+  PYTHON_VENV_PATH: "{{.ROOT_DIR}}/venv"
   SCRIPT_PATH: "{{.ROOT_DIR}}/scripts"
   VERSION: '{{default "unknown" .GIT_LATEST_TAG}}'
   SSH_AUTHORIZED_KEY: ~/.ssh/id_rsa.pub
