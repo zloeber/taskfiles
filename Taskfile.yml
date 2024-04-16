@@ -151,7 +151,6 @@ tasks:
         echo "SCRIPT_PATH: {{.SCRIPT_PATH}}"
         echo "BUILD_DATE: {{.BUILD_DATE}}"
         echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
-        echo "TASKFILE_BASE: tasks"
 
   show:all:
     desc: Show all variables for task namespaces
@@ -188,7 +187,7 @@ tasks:
   secrets:
     desc: Create template .SECRETS file if one does not already exist.
     cmds:
-      - copy ./config/.SECRETS.example.env ./.SECRETS.env
+      - cp ./config/.SECRETS.example.env ./.SECRETS.env
     status:
       - "test -f .SECRETS.env"
 
