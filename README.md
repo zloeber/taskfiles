@@ -70,11 +70,14 @@ Then at the root of your project run:
 vendir sync
 ln -s ./.tasks/tasks ./
 ln -s ./.tasks/Taskfile.yml ./
+cp ./.tasks/Taskfile.vars.yml ./
 ```
 
 Finish off by adding `.tasks` to your `./.gitignore`
 
 > **NOTE** You can keep any custom tasks in `./Taskfile.custom.yml` but you cannot use dotenv sourcing within them. Use `.mise.toml` to do this instead!
+
+> **NOTE** You can change variables in Taskfile.vars.yml as you see fit. If you softlink the base Taskfile.yml to subdirectories (for monorepos perhaps) adding another local var file to customize the targets may make sense.
 
 ##
 
