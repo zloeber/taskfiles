@@ -43,6 +43,8 @@ tasks:
         sudo usermod -aG docker ${USER}
         sudo systemctl enable docker
         sudo systemctl start docker
+        sudo systemctl enable docker.socket
+        sudo systemctl start docker.socket
     status:
       - type docker > /dev/null
 
