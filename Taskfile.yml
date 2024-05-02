@@ -75,6 +75,9 @@ includes:
   format:
     taskfile: ./tasks/Taskfile.format.yml
     optional: true
+  github:
+    taskfile: ./tasks/Taskfile.github.yml
+    optional: true
   gitlab:
     taskfile: ./tasks/Taskfile.gitlab.yml
     optional: true
