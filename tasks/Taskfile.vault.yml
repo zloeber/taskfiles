@@ -1,7 +1,6 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 
 version: "3"
-silent: true
 tasks:
   show:
     desc: Show variables for this task
@@ -10,6 +9,23 @@ tasks:
         echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
         echo "VERSION: {{.VERSION}}"
         echo "local_bin_path: {{.local_bin_path}}"
+
+  run:
+    desc: Run vault, persist the database locally
+    vars:
+      VAULT_CONFIG: '{{ .VAULT_CONFIG | default "./config/vault.hcl" }}'
+
+    cmds:
+      - vault server -config={{.VAULT_CONFIG}}
+
+  keybase:init:
+    desc: Initialize vault with keybase pgp key
+    vars:
+      KEYBASE_USER: ""
+    env:
+      VAULT_ADDR: http://127.0.0.2:8200
+    cmds:
+      - vault operator init -key-shares=1 -key-threshold=1 -pgp-keys="keybase:zloeber"
 
   install:
     desc: Install vault binary
