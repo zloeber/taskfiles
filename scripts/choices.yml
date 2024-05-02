@@ -2,8 +2,8 @@ choice_set:
   - name: vault_deployment
     description: A set of decisions required to configure a default hashicorp vault environment.
     choices:
-      - '{{ choice.environment.target }}'
-      - '{{ choice.deployment.ha_enabled }}'
+      - "{{ choice.environment.target }}"
+      - "{{ choice.deployment.ha_enabled }}"
 
 choice:
   environment:
@@ -28,9 +28,9 @@ choice:
     - name: ha_enabled
       value: HA Enabled
       options:
-        - name: 'Yes'
+        - name: "Yes"
           value: True
-        - name: 'No'
+        - name: "No"
           value: False
 
 ## A link can;

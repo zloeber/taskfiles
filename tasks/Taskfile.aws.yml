@@ -19,7 +19,6 @@ tasks:
       - |
         aws sts get-caller-identity
 
-
   render:profile:
     desc: Render an AWS cli config for the vault environments and display it on your screen
     silent: true

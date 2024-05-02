@@ -22,9 +22,7 @@ tasks:
     cmds:
       - >-
         prettier
-        --ignore-path '.github/linters/.prettierignore'
-        --config
-        '.github/linters/.prettierrc.yaml'
+        --ignore-path './.gitignore'
         --list-different
         --ignore-unknown
         --parser=yaml

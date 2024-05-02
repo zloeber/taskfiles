@@ -6,13 +6,13 @@ tasks:
   show:
     desc: Show variables for dotnet core tasks
     cmds:
-    - |
-      echo "ED_SERVER: {{.ED_SERVER}}"
+      - |
+        echo "ED_SERVER: {{.ED_SERVER}}"
 
   install:ldap:packages:
     desc: Install ldap package library dlls for powershell core
     cmds:
-    - |
-      dotnet new console
-      dotnet add package Microsoft.Extensions.Logging.Abstractions
-      dotnet add package Novell.Directory.Ldap.NETStandard
+      - |
+        dotnet new console
+        dotnet add package Microsoft.Extensions.Logging.Abstractions
+        dotnet add package Novell.Directory.Ldap.NETStandard

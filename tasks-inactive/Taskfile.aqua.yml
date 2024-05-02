@@ -9,6 +9,6 @@ tasks:
   sync:
     desc: Attempt to install aqua cli
     deps:
-      - 'install:aqua'
+      - "install:aqua"
     cmds:
       - "{{.local_bin_path}}/aqua install"

@@ -37,13 +37,12 @@ tasks:
 
   vendir:
     desc: install vendir application
-    cmds: 
+    cmds:
       - |
         mkdir -p {{.local_bin_path}}
         curl -L https://carvel.dev/install.sh | K14SIO_INSTALL_BIN_DIR={{.local_bin_path}} bash
     status:
       - type {{.local_bin_path}}/vendir &> /dev/null
-
 
   chezmoi:
     desc: install chezmoi dotfile manager
@@ -86,13 +85,13 @@ tasks:
           https://raw.githubusercontent.com/aquaproj/aqua-installer/v1.0.0/aqua-installer | \
             bash -s -- -i {{.local_bin_path}}/aqua
         chmod +x {{.local_bin_path}}/aqua
-    
+
     status:
       - "{{.local_bin_path}}/aqua -v"
 
   via:aqua:
     desc: Attempt to install APP via aqua cli
-    deps: [ "aqua" ]
+    deps: ["aqua"]
     cmds:
       - |
         if [[ "{{.APP}}" != "" ]]; then

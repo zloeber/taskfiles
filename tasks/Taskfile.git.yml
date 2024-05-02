@@ -60,14 +60,13 @@ tasks:
           echo "Merged ${b} succesfully!"
         done
 
-
   # init:submodule:
   #   desc: Iitialize all git submodules
   #   cmds:
   #     - |
   #       git submodule init
   #       git submodule update --recursive --init
-  #       git submodule foreach 'git checkout master || git checkout main'  
+  #       git submodule foreach 'git checkout master || git checkout main'
 
   # init:
   #   desc: Initializes git with author information
@@ -79,24 +78,24 @@ tasks:
   security:scan:
     desc: Perform security scan on local repo
     cmds:
-    - |
-      docker run --rm \
-        -e "WORKSPACE=${PWD}" \
-        -e ENABLE_OSS_RISK=true \
-        -v $PWD:/app shiftleft/sast-scan scan \
-        --src /app \
-        --type credscan,nodejs,python,yaml,terraform,ansible,bash,dockerfile,bash,depscan \
-        --out_dir /app/.local/reports
-      echo "View results in ./.local/reports"
+      - |
+        docker run --rm \
+          -e "WORKSPACE=${PWD}" \
+          -e ENABLE_OSS_RISK=true \
+          -v $PWD:/app shiftleft/sast-scan scan \
+          --src /app \
+          --type credscan,nodejs,python,yaml,terraform,ansible,bash,dockerfile,bash,depscan \
+          --out_dir /app/.local/reports
+        echo "View results in ./.local/reports"
 
   gitleaks:
     desc: Perform gitleaks scan
     cmds:
-    - |
-      docker pull ghcr.io/zricethezav/gitleaks:latest
-      docker run -v ${PWD}:/path zricethezav/gitleaks:latest \
-        detect -r /path/.local/reports \
-        --source="/path"
+      - |
+        docker pull ghcr.io/zricethezav/gitleaks:latest
+        docker run -v ${PWD}:/path zricethezav/gitleaks:latest \
+          detect -r /path/.local/reports \
+          --source="/path"
 
   ignore:update:
     desc: Adds a line to an existing .gitignore file if not already present

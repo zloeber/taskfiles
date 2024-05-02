@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 
-version: '3'
+version: "3"
 silent: true
 vars:
   workspace_profiles: "{{.ROOT_DIR}}/profiles"
@@ -13,18 +13,18 @@ tasks:
   show:
     desc: Show variables for workspace tasks
     cmds:
-    - |
-      REPO_COUNT=$(yq '.repos | length' {{.CONFIG_FILE}})
-      WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
-      WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
-      TARGET_PATH="{{.ROOT_DIR}}/${WORKSPACE}/${WORKSPACE_PROJECT}"
-      echo "ROOT_DIR: {{.ROOT_DIR}}"
-      echo "workspace_profiles: {{.workspace_profiles}}"
-      echo "CONFIG_FILE: {{.CONFIG_FILE}}"
-      echo "WORKSPACE: ${WORKSPACE}"
-      echo "PROFILE: {{.PROFILE}}"
-      echo "REPO_COUNT: ${REPO_COUNT}"
-      echo "TARGET_PATH: ${TARGET_PATH}"
+      - |
+        REPO_COUNT=$(yq '.repos | length' {{.CONFIG_FILE}})
+        WORKSPACE=${WORKSPACE:-"$(yq '.workspace' {{.CONFIG_FILE}} )"}
+        WORKSPACE_PROJECT=$(yq '.project' {{.CONFIG_FILE}})
+        TARGET_PATH="{{.ROOT_DIR}}/${WORKSPACE}/${WORKSPACE_PROJECT}"
+        echo "ROOT_DIR: {{.ROOT_DIR}}"
+        echo "workspace_profiles: {{.workspace_profiles}}"
+        echo "CONFIG_FILE: {{.CONFIG_FILE}}"
+        echo "WORKSPACE: ${WORKSPACE}"
+        echo "PROFILE: {{.PROFILE}}"
+        echo "REPO_COUNT: ${REPO_COUNT}"
+        echo "TARGET_PATH: ${TARGET_PATH}"
 
   sync:
     desc: Initialize and/or sync workspace for profile

@@ -12,7 +12,7 @@ tasks:
         echo "local_bin_path: {{.local_bin_path}}"
 
   config:llamafile:linux:
-    desc: Configure Linux to run llamafile 
+    desc: Configure Linux to run llamafile
     cmds:
       - |
         sudo wget -O /usr/bin/ape https://cosmo.zip/pub/cosmos/bin/ape-$(uname -m).elf

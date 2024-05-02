@@ -5,7 +5,7 @@ silent: true
 vars:
   LOCAL_ROOT_PATH:
     sh: echo "$(cd "$( dirname -- "$0" )" && pwd)"
-  ROOT_PATH: '{{.ROOT_DIR | default .LOCAL_ROOT_PATH}}'
+  ROOT_PATH: "{{.ROOT_DIR | default .LOCAL_ROOT_PATH}}"
   tools_versions: "{{.ROOT_DIR}}/.tools-versions"
   asdf_path:
     sh: echo "${HOME}/.asdf"
@@ -83,7 +83,7 @@ tasks:
   bootstrap:
     desc: Install asdf, install found plugins to defined version.
     deps: [install, init, update]
-  
+
   eject:
     desc: Copy single binaries as defined in .tools_versions that have been installed to another path
     cmds:
@@ -101,4 +101,3 @@ tasks:
         done < {{.ROOT_DIR}}/.tool-versions
     requires:
       vars: [BIN_TARGET]
-
