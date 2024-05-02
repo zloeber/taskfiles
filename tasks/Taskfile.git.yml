@@ -15,7 +15,7 @@ tasks:
     cmds:
       - |
         failedfiles=$(find . -type f \( -iname "*.tf" -o -iname "*.yml" -o -iname "checksum.*" ! -iname ".local" ! -iname "venv*" ! -iname "*inc/Taskfile.git.yml" ! -iname ".git" ! -iname "Makefile" ! -iname "Taskfile.git.yml" \) -exec grep -l "<<<<<<< HEAD" {} \;)
-        if [ "$failedfiles" ]; then 
+        if [ "$failedfiles" ]; then
           echo "Failed git/lint files: ${failedfiles} "
           exit 1
         fi
@@ -55,7 +55,7 @@ tasks:
 
         echo "Attempting to merge in all renovate/* branches found."
         echo "Any merge conflicts will need to be resolved before proceeding."
-        for b in $(git branch -r | grep renovate/); do 
+        for b in $(git branch -r | grep renovate/); do
           git merge $b;
           echo "Merged ${b} succesfully!"
         done

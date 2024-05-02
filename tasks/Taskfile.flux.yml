@@ -111,4 +111,4 @@ tasks:
           Age key file is not found. Did you forget to create it?
     requires:
       vars:
-        - SOPS_AGE_KEY_FILE #: ~/.config/sops/age/keys.txt
+        - SOPS_AGE_KEY_FILE

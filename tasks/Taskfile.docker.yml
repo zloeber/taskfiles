@@ -93,16 +93,6 @@ tasks:
       - |
         {{.docker}} build --no-cache {{.DOCKER_BUILD_ARGS}} -t {{.DOCKER_IMAGE}}:local -f {{.DOCKER_FILE}} {{.DOCKER_PATH}}
 
-  lint:
-    desc: Perform lint on current terraform
-    cmds:
-      - echo "TBD"
-
-  format:
-    #desc: Perform format on current codebase
-    cmds:
-      - echo "TBD"
-
   clean:
     desc: Clean local cached {{.docker}} elements
     cmds:

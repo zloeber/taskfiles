@@ -25,16 +25,6 @@ tasks:
         mise install npm:swagger-cli
         source {{.venv_path}}/bin/activate
         pip install fastapi-code-generator
-  # generate:api:
-  #   desc: Generate API code via openapi-generator-cli docker image
-  #   silent: true
-  #   cmds:
-  #     - |
-  #       docker run --rm -v "${PWD}:/local" \
-  #         openapitools/openapi-generator-cli generate \
-  #         -i ./openapi.yaml \
-  #         -g python \
-  #         -o /local/generated
 
   build:
     desc: Builds a single openapi.yaml file from the component manifests
@@ -91,7 +81,6 @@ tasks:
       - |
         source {{.PYTHON_VENV_PATH}}/bin/activate
         python3 -m smgt.api --config_path config.yml --schema_path openapi.yaml
-  #        uvicorn app.generated.main-default:api --host 0.0.0.0 --port ${SERVICE_PORT:-5000}
   generate:models:
     desc: Generate pydantic models for openapi yaml (alternative)
     cmds:
@@ -111,9 +100,9 @@ tasks:
           "SunOs") echo "\033[31;1m SOLARIS is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;;
           "Darwin")  platform="mac_x86_64" ;;
           "Linux")   platform="linux_gnu" ;;
-          "FreeBSD")     echo "\033[31;1m BSD is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;; 
-          "WindowsNT")    echo "\033[31;1m WINDOWS is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;; 
-          *)        echo "\033[31;1m unknown: $OSTYPE is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;;  
+          "FreeBSD")     echo "\033[31;1m BSD is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;;
+          "WindowsNT")    echo "\033[31;1m WINDOWS is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;;
+          *)        echo "\033[31;1m unknown: $OSTYPE is not yet supported, contact us to get support status or open a github issue\033[0m" ; exit 0;;
         esac
         echo "DETECTED OS - ${platform}";
         filename="cherrybomb_${platform}"
