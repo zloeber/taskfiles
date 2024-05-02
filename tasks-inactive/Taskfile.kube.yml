@@ -92,7 +92,7 @@ tasks:
       - |
         mkdir -p {{.local_bin_path}}
         curl --retry 3 --retry-delay 5 --fail -sSL -o {{.local_bin_path}}/autok3s \
-          https://github.com/cnrancher/autok3s/releases/download/v{{.autok3s_version}}//autok3s_{{OS}}_{{ARCH}} 
+          https://github.com/cnrancher/autok3s/releases/download/v{{.autok3s_version}}//autok3s_{{OS}}_{{ARCH}}
         chmod +x {{.local_bin_path}}/autok3s
         echo "installed binary: {{.local_bin_path}}/autok3s"
     status:
