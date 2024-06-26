@@ -36,8 +36,8 @@ includes:
   variables:
     taskfile: ./Taskfile.vars.yml
     optional: true
-  custom:
-    taskfile: ./Taskfile.custom.yml
+  agebox:
+    taskfile: ./tasks/Taskfile.agebox.yml
     optional: true
   ansible:
     taskfile: ./tasks/Taskfile.ansible.yml
@@ -54,11 +54,11 @@ includes:
   chatgpt:
     taskfile: ./tasks/Taskfile.chatgpt.yml
     optional: true
-  cluster:
-    taskfile: ./tasks/Taskfile.cluster.yml
-    optional: true
   cloudflared:
     taskfile: ./tasks/Taskfile.cloudflared.yml
+    optional: true
+  cluster:
+    taskfile: ./tasks/Taskfile.cluster.yml
     optional: true
   docker:
     taskfile: ./tasks/Taskfile.docker.yml
@@ -86,6 +86,9 @@ includes:
     optional: true
   go:
     taskfile: ./tasks/Taskfile.go.yml
+    optional: true
+  helmfile:
+    taskfile: ./tasks/Taskfile.helmfile.yml
     optional: true
   hugo:
     taskfile: ./tasks/Taskfile.hugo.yml
@@ -197,3 +200,5 @@ tasks:
     cmds:
       - sudo curl https://raw.githubusercontent.com/go-task/task/main/completion/zsh/_task \
         -o /usr/local/share/zsh/site-functions/_task
+    status:
+      - "test -f /usr/local/share/zsh/site-functions/_task"

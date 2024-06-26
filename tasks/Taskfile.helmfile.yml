@@ -1,0 +1,98 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+vars:
+  HOME_PATH: "{{.ROOT_DIR}}/venv"
+  BIN_PATH: "{{.HOME_PATH}}/bin"
+  CONFIG_PATH: "{{.ROOT_DIR}}/config"
+  HELM_BINARY: "helm"
+
+env:
+  XDG_CACHE_HOME: "{{.HOME_PATH}}"
+  XDG_CONFIG_HOME: "{{.HOME_PATH}}"
+  XDG_DATA_HOME: "{{.HOME_PATH}}"
+  CLUSTER: default
+  STACK: cluster.default
+
+tasks:
+  show:
+    desc: Show environment and variable settings
+    silent: true
+    cmds:
+      - echo "CLUSTER=$CLUSTER"
+      - echo "ENVIRONMENT=$ENVIRONMENT"
+      - echo "ARCH={{ARCH}}"
+      - echo "OS={{OS}}"
+      - echo "KUBE_VERSION=$KUBE_VERSION"
+      - echo "HELMFILE_PATH=helmfiles"
+      - echo "STACK=$STACK"
+      - echo "HELMFILE_VALUES=$HELMFILE_VALUES"
+
+  show:helm:
+    desc: Show helm settings
+    summary: |
+      Show helm settings used in this task runner.
+
+      This can be useful for exporting the values for sourcing into your own shell
+    silent: true
+    cmds:
+      - echo "export XDG_CACHE_HOME=$XDG_CACHE_HOME"
+      - echo "export XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
+      - echo "export XDG_DATA_HOME=$XDG_DATA_HOME"
+      - echo "alias hlm={{.HELM_BINARY}}"
+
+  stacks:
+    desc: Lists all available helmfile stacks
+    silent: true
+    cmds:
+      - ls helmfiles/helmfile.*.yaml | xargs -n1 basename | sed -e 's/\.yaml//g' -e 's/helmfile\.//g'
+
+  apply:
+    desc: apply all resources from state file only when there are changes
+    cmds:
+      - helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml apply
+
+  sync:
+    desc: Sync STACK with cluster
+    cmds:
+      - helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml sync
+
+  charts:
+    desc: Like helmfile:sync but offline with already downloaded charts
+    cmds:
+      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml charts"
+
+  repos:
+    desc: Helm repo add and update
+    cmds:
+      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml repos"
+
+  list:
+    desc: List resources in state file
+    cmds:
+      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml list"
+
+  diff:
+    desc: diffs STACK with cluster
+    cmds:
+      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml diff"
+
+  test:
+    desc: Tests STACK on cluster
+    cmds:
+      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml test"
+
+  destroy:
+    desc: Removes STACK from cluster
+    cmds:
+      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml destroy"
+
+  build:
+    desc: Builds helmfile YAML only
+    cmds:
+      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml build"
+
+  template:
+    desc: template STACK yaml manifest for cluster
+    cmds:
+      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml template"

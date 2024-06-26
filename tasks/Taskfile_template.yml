@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+tasks:
+  show:
+    desc: Show variables for this task
+    cmds:
+      - |
+        echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
+        echo "VERSION: {{.VERSION}}"
