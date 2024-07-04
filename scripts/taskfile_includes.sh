@@ -7,6 +7,9 @@ base_folder="./tasks"
 yaml_string="includes:
   variables:
     taskfile: ./Taskfile.vars.yml
+    optional: true
+  custom:
+    taskfile: ./Taskfile.custom.yml
     optional: true"
 
 # Loop through Taskfile.*.yml files in the base folder

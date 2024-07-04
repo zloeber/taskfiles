@@ -5,7 +5,7 @@ silent: true
 vars:
   GITHUB_PATH:
     sh: |
-      git remote get-url origin | sed -Ee 's/.*:(.+)\.git/\1/'
+      git remote get-url origin 2>/dev/null | sed -Ee 's/.*:(.+)\.git/\1/'
   GITHUB_URL:
     sh: 'echo ${GITHUB_URL:-"https://www.github.com"}'
   GITHUB_UI_PATH: "{{.GITHUB_URL}}/{{.GITHUB_PATH}}"

@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+## NOTE: Just an example custom taskfile one might use for local project tasks.
+
+version: "3"
+
+vars:
+  PROJECT_NAME:
+    sh: echo $(basename "{{.ROOT_DIR}}")
+
+env:
+  KUBECONFIG: "{{.ROOT_DIR}}/kubeconfig"
+
+tasks:
+  show:
+    desc: Show custom vars
+    cmds:
+      - |
+        echo "PROJECT_NAME: {{.PROJECT_NAME}}"
+        echo "KUBECONFIG: ${KUBECONFIG}"

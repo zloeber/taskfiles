@@ -1,3 +1,7 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+## NOTE: Don't update this file if you are syncing via vendir.
+##       Create/update ./Taskfile.custom.yml instead!
 version: "3"
 silent: true
 env:
@@ -131,6 +135,9 @@ includes:
     optional: true
   workstation:
     taskfile: ./tasks/Taskfile.workstation.yml
+    optional: true
+  custom:
+    taskfile: ./Taskfile.custom.yml
     optional: true
 
 tasks:

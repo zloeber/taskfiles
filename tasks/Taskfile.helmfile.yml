@@ -1,32 +1,35 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 
+# This is just a targeting system for helmfile deployments based on some env vars
+
 version: "3"
 vars:
-  HOME_PATH: "{{.ROOT_DIR}}/venv"
-  BIN_PATH: "{{.HOME_PATH}}/bin"
-  CONFIG_PATH: "{{.ROOT_DIR}}/config"
-  HELM_BINARY: "helm"
+  HELMFILE_BASE_PATH: '{{ .HELMFILE_BASE_PATH | default "./helmfiles" }}'
+  HELMFILE_TARGET: '{{ .HELMFILE_TARGET | default "cluster.default" }}'
 
 env:
-  XDG_CACHE_HOME: "{{.HOME_PATH}}"
-  XDG_CONFIG_HOME: "{{.HOME_PATH}}"
-  XDG_DATA_HOME: "{{.HOME_PATH}}"
-  CLUSTER: default
-  STACK: cluster.default
+  # XDG_CACHE_HOME: "{{.ROOT_DIR}}/venv"
+  # XDG_CONFIG_HOME: "{{.ROOT_DIR}}/venv"
+  # XDG_DATA_HOME: "{{.ROOT_DIR}}/venv"
+  KUBECONFIG:
+    sh: |
+      if [ -f "{{.ROOT_DIR}}/kubeconfig" ]; then
+        echo "{{.ROOT_DIR}}/kubeconfig"; 
+      else 
+        echo "$HOME/.kube/config"; 
+      fi
+  HELMFILE_FILE_PATH: "{{.HELMFILE_BASE_PATH}}/{{.HELMFILE_TARGET}}.yml"
 
 tasks:
   show:
     desc: Show environment and variable settings
     silent: true
     cmds:
-      - echo "CLUSTER=$CLUSTER"
-      - echo "ENVIRONMENT=$ENVIRONMENT"
-      - echo "ARCH={{ARCH}}"
-      - echo "OS={{OS}}"
-      - echo "KUBE_VERSION=$KUBE_VERSION"
-      - echo "HELMFILE_PATH=helmfiles"
-      - echo "STACK=$STACK"
-      - echo "HELMFILE_VALUES=$HELMFILE_VALUES"
+      - |
+        #echo "HELMFILE_TARGET: {{.HELMFILE_TARGET}}"
+        echo "HELMFILE_BASE_PATH: {{.HELMFILE_BASE_PATH}}"
+        echo "HELMFILE_FILE_PATH: ${HELMFILE_FILE_PATH}"
+        echo "KUBECONFIG: ${KUBECONFIG}"
 
   show:helm:
     desc: Show helm settings
@@ -39,60 +42,67 @@ tasks:
       - echo "export XDG_CACHE_HOME=$XDG_CACHE_HOME"
       - echo "export XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
       - echo "export XDG_DATA_HOME=$XDG_DATA_HOME"
-      - echo "alias hlm={{.HELM_BINARY}}"
+
+  init:
+    desc: Initialize helmfile
+    silent: true
+    cmds:
+      - helmfile init
+      - rm -rf ~/.local/share/helm/plugins/helm-git*
+      - helm plugin install https://github.com/aslafy-z/helm-git --version 0.16.1
 
   stacks:
     desc: Lists all available helmfile stacks
     silent: true
     cmds:
-      - ls helmfiles/helmfile.*.yaml | xargs -n1 basename | sed -e 's/\.yaml//g' -e 's/helmfile\.//g'
+      - ls {{.HELMFILE_BASE_PATH}}/*.yml | xargs -n1 basename | sed -e 's/\.yml//g'
 
   apply:
-    desc: apply all resources from state file only when there are changes
+    desc: Apply all resources from state file only when there are changes
     cmds:
-      - helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml apply
+      - helmfile apply
 
   sync:
-    desc: Sync STACK with cluster
+    desc: Sync HELMFILE_TARGET with cluster
     cmds:
-      - helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml sync
-
-  charts:
-    desc: Like helmfile:sync but offline with already downloaded charts
-    cmds:
-      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml charts"
+      - helmfile sync
 
   repos:
     desc: Helm repo add and update
     cmds:
-      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml repos"
+      - helmfile repos
 
   list:
     desc: List resources in state file
     cmds:
-      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml list"
+      - helmfile list
 
   diff:
-    desc: diffs STACK with cluster
+    desc: diffs HELMFILE_TARGET with cluster
     cmds:
-      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml diff"
+      - helmfile diff
 
   test:
-    desc: Tests STACK on cluster
+    desc: Tests HELMFILE_TARGET on cluster
     cmds:
-      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml test"
+      - helmfile test
 
   destroy:
-    desc: Removes STACK from cluster
+    desc: Removes HELMFILE_TARGET from cluster
     cmds:
-      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml destroy"
+      - helmfile destroy
 
   build:
     desc: Builds helmfile YAML only
     cmds:
-      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml build"
+      - helmfile build
 
   template:
-    desc: template STACK yaml manifest for cluster
+    desc: template HELMFILE_TARGET YAML manifest for cluster
     cmds:
-      - "helmfile -b {{.HELM_BINARY}} -e $ENVIRONMENT -f helmfiles/helmfile.$STACK.yaml template"
+      - helmfile template
+
+  deps:
+    desc: deps HELMFILE_TARGET with cluster
+    cmds:
+      - helmfile deps
