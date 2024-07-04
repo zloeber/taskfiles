@@ -5,7 +5,7 @@ silent: true
 vars:
   GITLAB_PATH:
     sh: |
-      git remote get-url origin | sed -Ee 's/.*:(.+)\.git/\1/'
+      git remote get-url origin 2>/dev/null | sed -Ee 's/.*:(.+)\.git/\1/'
   GITLAB_URL:
     sh: 'echo ${GITLAB_URL:-"https://gitlab.com"}'
   GITLAB_UI_PATH: "{{.GITLAB_URL}}/{{.GITLAB_PATH}}"
