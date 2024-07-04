@@ -10,8 +10,8 @@ vars:
   ANSIBLE_DIR: '{{ .ANSIBLE_DIR | default "ansible" }}'
   venv_path:
     sh: echo ${PYTHON_VENV_PATH:-"{{.PYTHON_VENV_PATH}}"}
-  ANSIBLE_PLAYBOOK_DIR: "playbooks"
-  ANSIBLE_INVENTORY_DIR: "inventory"
+  ANSIBLE_PLAYBOOK_DIR: "{{.ANSIBLE_DIR}}/playbooks"
+  ANSIBLE_INVENTORY_DIR: "{{.ANSIBLE_DIR}}/inventory"
 
 tasks:
   show:
