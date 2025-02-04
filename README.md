@@ -1,10 +1,13 @@
 <!---toc start-->
 
-- [Taskfiles Collection](#taskfiles-collection)
-- [Configuration](#configuration)
-  - [Notes](#notes)
-    - [Docker Image](#docker-image)
-    - [Applications](#applications)
+* [Taskfiles Collection](#taskfiles-collection)
+* [Configuration](#configuration)
+  * [Additional Software](#additional-software)
+  * [Variables](#variables)
+* [Notes](#notes)
+    * [Docker Image](#docker-image)
+  * [Usage](#usage)
+  * [Development](#development)
 
 <!---toc end-->
 

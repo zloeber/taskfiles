@@ -5,6 +5,7 @@
 .local
 .llamafile
 venv
+.venv
 workspace
 .vault
 .SECRETS.env
