@@ -187,7 +187,7 @@ tasks:
     cmds:
       - task: venv
       - |
-        source {{.venv_path}}/bin/activate
+        #source {{.venv_path}}/bin/activate
         if [ -f pyproject.toml ]; then
           target_reqs="pyproject.toml"
         elif [ -f requirements.txt ]; then

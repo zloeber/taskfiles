@@ -14,13 +14,25 @@ ZGENOM_RESET_ON_CHANGE=(
   ${ZDOTDIR:-$HOME}/.zshrc.local
 )
 
-eval "$($(which mise) activate zsh)"
+# Install mise
+if ! command -v mise &>/dev/null; then
+  curl https://mise.run | sh
+  eval "$(${HOME}/.local/bin/mise activate zsh)"
+else
+  eval "$(mise activate zsh)"
+fi
 
 eval "$(mise hook-env -s zsh)"
 
+if [[ ! -f ~/.config/mise/config.toml ]]; then
+  echo "No mise.toml found, creating one"
+  mise use -g task
+  mise use -g fzf
+fi
+
 export FZF_BASE=$(mise where fzf)
 
-# if the init scipt doesn't exist then get to it!
+# if the init script doesn't exist then get to it!
 if ! zgenom saved; then
     echo "Creating a zgenom save"
 
@@ -90,11 +102,11 @@ compinit
 
 export HISTFILE="$HOME/.zsh_history"
 export PATH="/usr/local/sbin:$PATH"
-export CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-export HTTPLIB2_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
-export OPENSSL_CONF=/usr/local/etc/openssl@3/openssl.cnf
-export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+# export CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+# export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+# export HTTPLIB2_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+# export OPENSSL_CONF=/usr/local/etc/openssl@3/openssl.cnf
+# export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
 case ":$PATH:" in
   *":${HOME}/.local/bin:"*) ;;
@@ -103,7 +115,3 @@ esac
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-eval "$(/home/zloeber/.local/bin/mise activate zsh)"
-
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/home/zloeber/.lmstudio/bin"
