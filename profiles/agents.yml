@@ -1,0 +1,8 @@
+workspace: workspace
+project: agents
+repos:
+  - name: crewai-family-planner
+    project: zloeber/crewai-family-planner
+    url: git@github.com:zloeber/crewai-vacation-planner.git
+    branches:
+      - main

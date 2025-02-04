@@ -1,0 +1,8 @@
+workspace: workspace
+project: cdktf
+repos:
+  - name: typescript-argocd
+    project: zloeber/zacharyloeber.com
+    url: git@github.com:zloeber/cdktf-argocd-bootstrap.git
+    branches:
+      - main

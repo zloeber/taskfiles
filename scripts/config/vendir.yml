@@ -1,0 +1,13 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: ./.tasks
+    contents:
+      - path: ./
+        git:
+          url: https://github.com/zloeber/taskfiles.git
+          ref: main
+        includePaths:
+          - tasks/**/*
+          - Taskfile.yml
+          - Taskfile.vars.yml

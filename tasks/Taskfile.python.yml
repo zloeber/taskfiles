@@ -5,7 +5,8 @@ silent: true
 vars:
   venv_path:
     sh: echo ${PYTHON_VENV_PATH:-"{{.PYTHON_VENV_PATH}}"}
-  pip3: "{{.venv_path}}/bin/pip3"
+  #pip3: "{{.venv_path}}/bin/pip3"
+  pip3: "uv pip"
   linter: "{{.venv_path}}/bin/flake8"
   pandoc: "{{.venv_path}}/bin/pandoc"
   pytest: "{{.venv_path}}/bin/py.test"
@@ -151,6 +152,14 @@ tasks:
         rm -rf {{.venv_path}}
 
   venv:
+    desc: Start virtual environment (uv)
+    cmds:
+      - |
+        uv venv {{.venv_path}}
+    status:
+      - test -d {{.venv_path}}
+
+  venv:pip:
     desc: Start virtual environment
     cmds:
       - |
@@ -160,7 +169,7 @@ tasks:
     status:
       - test -d {{.venv_path}}
 
-  install:
+  install:pip:
     desc: Install locally
     cmds:
       - |
@@ -173,12 +182,39 @@ tasks:
           --no-warn-conflicts \
           -r requirements.txt
 
-  build:
+  install:
+    desc: Install locally (uv)
+    cmds:
+      - task: venv
+      - |
+        source {{.venv_path}}/bin/activate
+        if [ -f pyproject.toml ]; then
+          target_reqs="pyproject.toml"
+        elif [ -f requirements.txt ]; then
+          target_reqs="requirements.txt"
+        else
+          target_reqs=""
+        fi
+        if [ -n "$target_reqs" ]; then
+          echo "Installing requirements from: ${target_reqs}"
+          uv pip install -r $target_reqs
+        fi
+
+  build:pip:
     desc: Build
     cmds:
       - |
         source {{.venv_path}}/bin/activate
         pip install --editable .
+
+  build:
+    desc: Build (uv)
+    cmds:
+      - task: install
+      - |
+        source {{.venv_path}}/bin/activate
+        uv build
+        uv lock
 
   fastapi:init:
     desc: Configure fastapi components
@@ -212,61 +248,20 @@ tasks:
         pip3 install bandit
         bandit --format screen --r {{.PACKAGE_NAME}}
 
-  # allure:download:
-  #   desc: Install allure cli
-  #   silent: true
+  # bumpversion:install:
+  #   desc: Bump2version install
   #   deps: [venv]
   #   cmds:
   #     - |
-  #       pip3 install allure-pytest
-  #       if ! curl --fail --location --progress-bar --output "{{.venv_path}}/allure.zip" "https://github.com/allure-framework/allure2/releases/download/2.20.1/allure-2.20.1.zip"; then
-  #         echo "Could not find version of allure!"
-  #         exit 1
-  #       fi
+  #       source {{.venv_path}}/bin/activate
+  #       pip install bump2version
   #   status:
-  #     - test -f {{.venv_path}}/allure.zip
+  #     - test -e {{.venv_path}}/bin/bump2version
 
-  # allure:install:
-  #   desc: Install allure cli
-  #   silent: true
-  #   deps: [allure:download]
+  # bumpversion:
+  #   desc: Bump project version
+  #   deps: [bumpversion:install]
   #   cmds:
   #     - |
-  #       rm -rf {{.venv_path}}/bin/allure-bin
-  #       unzip {{.venv_path}}/allure.zip -d {{.venv_path}}/bin/allure-bin
-  #       cd {{.venv_path}}/bin
-  #       ln -sf ./allure-bin/allure-2.20.1/bin/allure ./allure
-  #   status:
-  #     - test -e {{.venv_path}}/bin/allure
-
-  # allure:serve:
-  #   desc: run local server
-  #   silent: true
-  #   cmds:
-  #     - |
-  #       {{.venv_path}}/bin/allure serve coverage/data
-
-  # allure:generate:
-  #   desc: run local server
-  #   silent: true
-  #   deps: [allure:install]
-  #   cmds:
-  #     - "{{.venv_path}}/bin/allure generate --clean --output docs/coverage coverage/data"
-
-  bumpversion:install:
-    desc: Bump2version install
-    deps: [venv]
-    cmds:
-      - |
-        source {{.venv_path}}/bin/activate
-        pip install bump2version
-    status:
-      - test -e {{.venv_path}}/bin/bump2version
-
-  bumpversion:
-    desc: Bump project version
-    deps: [bumpversion:install]
-    cmds:
-      - |
-        source {{.venv_path}}/bin/activate
-        {{.venv_path}}/bin/bump2version patch
+  #       source {{.venv_path}}/bin/activate
+  #       {{.venv_path}}/bin/bump2version patch

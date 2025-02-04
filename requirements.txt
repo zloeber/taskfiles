@@ -6,3 +6,4 @@ prettytable
 ansible
 mdtoc
 pyyaml
+pipx

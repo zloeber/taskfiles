@@ -9,6 +9,7 @@ tasks:
       - |
         echo "GIT_LATEST_TAG: {{.GIT_LATEST_TAG}}"
         echo "VERSION: {{.VERSION}}"
+        echo "AWS_PROFILE: {{.AWS_PROFILE}}"
         echo "AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-""}"
         echo "AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-""}"
         echo "AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-""}"

@@ -18,7 +18,7 @@ You can install [mise](https://mise.jdx.dev) and other requirements via `./.conf
 
 ## Additional Software
 
-Mise handles a good deal of software you might use in a taskfile. Check if whatever binary you are looking for with `mise install <binary>`. If it is not installed then you can use rust, go, or python packages with mise as well. One example of this is in this project's `.mise.toml` file for [eget](https://github.com/zyedidia/eget) (which is a last ditch method to automatically install binary releases from github). You can use eget to install binaries into your user local bin path like so `eget canop/broot --to ~/.local/bin`
+Mise handles a good deal of software you might use in a taskfile. Check if whatever binary you are looking for with `mise install <binary>`. If it is not installed then you can use cargo, go, or python packages as well. One example of this is in this project's `.mise.toml` file for [eget](https://github.com/zyedidia/eget) (which is a last ditch method to automatically install binary releases from github). You can use eget to install binaries into your user local bin path like so `eget canop/broot --to ~/.local/bin`
 
 ## Variables
 
@@ -42,7 +42,7 @@ Then when you are in the running container start up zsh for a better shell exper
 
 ## Usage
 
-To use this in a project you need only copy the `tasks` folder and `Taskfile.yml`/`Taskfile.vars.yml` to your project root. You need only keep files in the `tasks` folder that you plan on using.
+To use this in a project you need only copy the `tasks` folder and `Taskfile.yml`/`Taskfile.vars.yml` to your project root. Keep files in the `tasks` folder that you plan on using. Ensure `tasks` is in your `.gitignore` file.
 
 > **TIP** Monorepo project? To use the tasks within subfolders simply soft link the Taskfile.yml and tasks folder into it. Then create a per-folder Taskfile.vars.yml file if needed.
 

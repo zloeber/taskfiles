@@ -1,0 +1,13 @@
+workspace: workspace
+project: bootstrapr
+repos:
+  - name: bootstrapr
+    project: zloeber/bootstrapr
+    url: git@github.com:zloeber/bootstrapr.git
+    branches:
+      - main
+  # - name: homelab-flux
+  #   project: zloeber/homelab-flux
+  #   url: git@github.com:zloeber/homelab-flux.git
+  #   branches:
+  #     - main

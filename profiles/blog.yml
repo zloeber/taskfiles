@@ -31,3 +31,8 @@ repos:
     url: git@github.com:zloeber/resume.git
     branches:
       - main
+  - name: blog
+    project: zloeber/blog
+    url: git@github.com:zloeber/blog.git
+    branches:
+      - main

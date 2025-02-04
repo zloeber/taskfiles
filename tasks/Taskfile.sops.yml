@@ -1,9 +1,12 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 
+# We combine age and sops into one task file
+
 version: "3"
 vars:
   AGE_CONFIG_PATH: '{{ .AGE_CONFIG_PATH | default "~/.config/sops/age" }}'
   SOPS_CONFIG_FILE: "{{.ROOT_DIR}}/.sops.yaml"
+  SECRETS_DIR: "{{.ROOT_DIR}}/secrets"
 
 tasks:
   show:
@@ -45,13 +48,7 @@ tasks:
     cmds:
       - sops --decrypt --in-place {{.CLI_ARGS}}
 
-  age-keygen:
-    desc: Initialize Age Key for Sops
-    cmd: age-keygen --output {{.AGE_FILE}}
-    status:
-      - test -f "{{.AGE_FILE}}"
-
-  encrypt:
+  encrypt:kube:
     desc: Encrypt all Kubernetes SOPS secrets that are not already encrypted
     cmds:
       - for: { var: file }
@@ -64,6 +61,43 @@ tasks:
           if [ -d "{{.KUBERNETES_DIR}}" ]; then
               find "{{.KUBERNETES_DIR}}" -type f -name "*.sops.*" -exec grep -L "ENC\[AES256_GCM" {} \;
           fi
+
+  encrypt:global:
+    desc: Encrypt all global secrets
+    cmds:
+      - for: { var: file }
+        task: .encrypt-file
+        vars:
+          file: "{{.ITEM}}"
+    vars:
+      file:
+        sh: |
+          if [ -d "{{.SECRETS_DIR}}" ]; then
+              find "{{.SECRETS_DIR}}" -type f -name "*.*";
+          fi
+
+  decrypt:global:
+    desc: Decrypt all global secrets
+    cmds:
+      - for: { var: file }
+        task: .decrypt-file
+        vars:
+          file: "{{.ITEM}}"
+    vars:
+      file:
+        sh: |
+          if [ -d "{{.SECRETS_DIR}}" ]; then
+              find "{{.SECRETS_DIR}}" -type f -name "*.*";
+          fi
+
+  .decrypt-file:
+    internal: true
+    cmd: sops --decrypt --in-place {{.file}}
+    requires:
+      vars: ["file"]
+    preconditions:
+      - { msg: "Missing Sops config file", sh: "test -f {{.SOPS_CONFIG_FILE}}" }
+      - { msg: "Missing Sops Age key file", sh: "test -f {{.AGE_FILE}}" }
 
   .encrypt-file:
     internal: true

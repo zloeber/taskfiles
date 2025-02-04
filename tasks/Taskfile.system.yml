@@ -61,3 +61,13 @@ tasks:
         }
 
         update_gitignore "{{.ROOT_DIR}}/.gitignore" {{.CLI_ARGS}}
+
+  nfs:restart:
+    desc: restart nfs locally
+    cmds:
+      - |
+        sudo mount -o remount,rw /dev/sdc 
+        sudo chown nobody:nogroup /nfs/data1
+        sudo chmod g+rwxs /nfs/data1
+        sudo mount -a
+        sudo systemctl restart nfs-kernel-server

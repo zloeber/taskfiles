@@ -4,7 +4,7 @@
 ##       Create/update ./Taskfile.custom.yml instead!
 version: "3"
 silent: true
-env:
+vars:
   TARGET:
     sh: 'echo "${TARGET:-"default"}"'
   PROFILE:
@@ -21,7 +21,7 @@ env:
   #   sh: 'git tag -l 2>/dev/null | sort -r -V | head -n 1 2>/dev/null || echo "not a git repo"'
   TERM: screen-256color
   DOCS_PATH: "{{.ROOT_DIR}}/docs"
-  PYTHON_VENV_PATH: "{{.ROOT_DIR}}/venv"
+  PYTHON_VENV_PATH: "{{.ROOT_DIR}}/.venv"
   SCRIPT_PATH: "{{.ROOT_DIR}}/scripts"
   VERSION: '{{default "unknown" .GIT_LATEST_TAG}}'
   SSH_AUTHORIZED_KEY: ~/.ssh/id_rsa.pub
@@ -203,7 +203,7 @@ tasks:
       - "test -f .SECRETS.env"
 
   autocomplete:
-    desc: Setup task autocomplete
+    desc: Setup task autocomplete (zsh)
     cmds:
       - sudo curl https://raw.githubusercontent.com/go-task/task/main/completion/zsh/_task \
         -o /usr/local/share/zsh/site-functions/_task
