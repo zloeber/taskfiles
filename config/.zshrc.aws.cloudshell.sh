@@ -1,3 +1,11 @@
+# Amazon Q pre block. Keep at the top of this file.
+[[ -f "${HOME}/.local/share/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/.local/share/amazon-q/shell/zshrc.pre.zsh"
+#
+# .zshrc is sourced in interactive shells.
+# It should contain commands to set up aliases,
+# functions, options, key bindings, etc.
+#
+
 # load zgenom
 ZGENOM_DIR="${HOME}/.zgenom"
 
@@ -14,11 +22,12 @@ ZGENOM_RESET_ON_CHANGE=(
   ${ZDOTDIR:-$HOME}/.zshrc.local
 )
 
-eval "$($(which mise) activate zsh)"
-
-eval "$(mise hook-env -s zsh)"
-
-export FZF_BASE=$(mise where fzf)
+if [ -f $HOME/.local/bin/mise ]; then
+  eval "$(${HOME}/.local/bin/mise activate zsh)"
+  eval "$(mise hook-env -s zsh)"
+  mise use fzf
+  export FZF_BASE=$(mise where fzf)
+fi
 
 # if the init scipt doesn't exist then get to it!
 if ! zgenom saved; then
@@ -81,20 +90,13 @@ fi
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f "${HOME}/.p10k.zsh" ]] || source "${HOME}/.p10k.zsh"
 
-# if [ -f $HOME/.profile ]; then
-#   source $HOME/.profile
-# fi
-
-autoload -Uz compinit
+autoload -U compinit
 compinit
 
+#allow tab completion in the middle of a word
+setopt COMPLETE_IN_WORD
+
 export HISTFILE="$HOME/.zsh_history"
-export PATH="/usr/local/sbin:$PATH"
-export CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-export HTTPLIB2_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
-export OPENSSL_CONF=/usr/local/etc/openssl@3/openssl.cnf
-export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
 case ":$PATH:" in
   *":${HOME}/.local/bin:"*) ;;
@@ -103,7 +105,28 @@ esac
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-eval "$(/home/zloeber/.local/bin/mise activate zsh)"
 
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/home/zloeber/.lmstudio/bin"
+autoload -Uz compinit && compinit
+autoload bashcompinit && bashcompinit
+complete -C '/usr/local/bin/aws_completer' aws
+
+case ":$PATH:" in
+  *":${HOME}/.local/bin:"*) ;;
+  *) export PATH="$PATH:${HOME}/.local/bin" ;;
+esac
+autoload -Uz compinit && compinit
+autoload bashcompinit && bashcompinit
+
+
+case ":$PATH:" in
+  *":${HOME}/.local/bin:"*) ;;
+  *) export PATH="$PATH:${HOME}/.local/bin" ;;
+esac
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+eval "$(${HOME}/.local/bin/mise activate zsh)"
+#export PROMPT='%1~ %# '
+
+# Amazon Q post block. Keep at the bottom of this file.
+[[ -f "${HOME}/.local/share/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/.local/share/amazon-q/shell/zshrc.post.zsh"
