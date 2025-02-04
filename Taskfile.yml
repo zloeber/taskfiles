@@ -13,13 +13,12 @@ vars:
     sh: 'echo "$(basename $(pwd))"'
   PYTHON_VENV_PATH: "{{.ROOT_DIR}}/.venv"
   LOCAL_BIN_PATH: "{{.PYTHON_VENV_PATH}}/bin"
-  #    sh: 'echo "{{.ROOT_DIR}}/.venv/bin"'
   BUILD_DATE:
     sh: "date '+%Y-%m-%d-%H:%M:%S'"
   BUILD_DATE_SHORT:
     sh: "date '+%Y-%m-%d-%H%M%S'"
   GIT_LATEST_TAG:
-    sh: '$(git tag -l 2>/dev/null | sort -r -V | head -n 1 2>/dev/null) || echo "not a git repo"'
+    sh: 'git tag -l 2>/dev/null | sort -r -V | head -n 1 2>/dev/null || echo "not a git repo"'
   TERM: screen-256color
   DOCS_PATH: "{{.ROOT_DIR}}/docs"
   SCRIPT_PATH: "{{.ROOT_DIR}}/scripts"
