@@ -41,3 +41,10 @@ tasks:
         else
           xdg-open ${GITHUB_UI_PATH}/actions
         fi
+
+  reset:ssh:keys:
+    desc: Remove trusted ssh IPs and update with latest public key for all target IPs
+    cmds:
+      - |
+        ssh-keygen -R github.com
+        curl -L https://api.github.com/meta | jq -r '.ssh_keys | .[]' | sed -e 's/^/github.com /' >> ~/.ssh/known_hosts
