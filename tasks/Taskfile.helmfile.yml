@@ -14,9 +14,9 @@ env:
   KUBECONFIG:
     sh: |
       if [ -f "{{.ROOT_DIR}}/kubeconfig" ]; then
-        echo "{{.ROOT_DIR}}/kubeconfig"; 
-      else 
-        echo "$HOME/.kube/config"; 
+        echo "{{.ROOT_DIR}}/kubeconfig";
+      else
+        echo "$HOME/.kube/config";
       fi
   HELMFILE_FILE_PATH: "{{.HELMFILE_BASE_PATH}}/{{.HELMFILE_TARGET}}.yml"
 
