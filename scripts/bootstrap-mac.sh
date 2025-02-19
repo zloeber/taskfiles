@@ -71,5 +71,5 @@ copy_file ./config/.zshrc.local $HOME/.zshrc.local
 copy_file ./config/.zprofile $HOME/.zprofile
 copy_file ./config/.p10k.zsh $HOME/.p10k.zsh
 
-$HOME/.local/bin/mise install -g fzf
-$HOME/.local/bin/mise install -g task
+$HOME/.local/bin/mise use -g fzf
+$HOME/.local/bin/mise use -g task
